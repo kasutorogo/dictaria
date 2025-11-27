@@ -13,7 +13,7 @@ It listens to your microphone, transcribes audio locally using [faster-whisper](
 ## ✨ Features
 
 * Records from the system default microphone.
-* Local transcription with `faster-whisper` (`medium` model by default).
+* Local transcription with `faster-whisper`. It uses the **Whisper v3 medium model** by default, which offers excellent accuracy.
 * **Automatically copies transcribed text to the system clipboard (portapapeles).**
 * **Pin button** 📌 to keep the window **always on top** (primer plano).
 * Multi-language support via a single dropdown:
@@ -116,7 +116,7 @@ Download and install [Hammerspoon](https://www.hammerspoon.org/). It requires **
     -- Dictaria Hotkey: Cmd + Option + F9 (communicates via a temporary file)
     local dictaria_hotkey = {"cmd", "alt"} 
     local dictaria_key = "f9"
-    local signal_file = "/tmp/dictaria_signal_f9.txt" 
+    local signal_file = "/tmp/dictaria_signal_f9.txt"  // Must match SIGNAL_FILE in dictaria.py
 
     hs.hotkey.bind(dictaria_hotkey, dictaria_key, function()
         -- Use 'touch' to create the signal file. Dictaria.py polls and deletes it.
