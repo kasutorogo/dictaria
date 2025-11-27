@@ -73,8 +73,8 @@ LANG_DEFS = [
 ]
 
 # Messages
-MSG_LOADING_MODEL = "[Initializing AI Model... please wait]"
-MSG_MODEL_READY = "[AI Ready. Press {} to dictate]"
+MSG_LOADING_MODEL = "[Initializing Dictaria... please wait]"
+MSG_MODEL_READY = "[Dictaria Ready. Press {} to dictate]"
 MSG_SELECT_LANG = "[Please select a language first]"
 MSG_LISTENING = "[Listening...]"
 MSG_PROCESSING = "[Transcribing...]"
@@ -174,6 +174,18 @@ class DictariaApp:
         
         # Start the global hotkey listener separately
         self.global_hotkey_listener = start_global_hotkey_listener(self)
+
+    def _get_emoji_font_name(self):
+        """Determines the safest emoji font name based on the OS."""
+        if os.name == "nt":
+            # Windows
+            return "Segoe UI Emoji"
+        elif sys.platform == "darwin":
+            # macOS
+            return "Apple Color Emoji"
+        else:
+            # Linux (Uses 'Sans' as a safe generic fallback)
+            return "Sans"
 
     # --- UI CONSTRUCTION ---
 
@@ -302,7 +314,7 @@ class DictariaApp:
         if self.model_loading:
             return # Ignore clicks while loading
 
-        # Ensure a language is always selected if favorites exist
+        # --- FIX: Ensure a language is always selected if favorites exist ---
         if self.active_language is None:
             if self.favorites:
                 self.active_language = self.favorites[0]
@@ -310,6 +322,7 @@ class DictariaApp:
             else:
                 self.append_system(MSG_SELECT_LANG, tag="error")
                 return
+        # -------------------------------------------------------------------
 
         if not self.recorder.is_recording:
             # --- START RECORDING ---
@@ -430,6 +443,9 @@ class DictariaApp:
         for widget in self.fav_container.winfo_children():
             widget.destroy()
             
+        # Get the determined safe font name
+        emoji_font_name = self._get_emoji_font_name()
+        
         # Rebuild
         for code in self.favorites:
             # Find flag definition
@@ -442,7 +458,8 @@ class DictariaApp:
             lbl = tk.Label(
                 self.fav_container, 
                 text=flag, 
-                font=("Segoe UI Emoji" if os.name=="nt" else "Apple Color Emoji", 20),
+                # Use the determined safe font name
+                font=(emoji_font_name, 20),
                 fg=fg_color, 
                 bg=bg_color,
                 cursor="hand2"
