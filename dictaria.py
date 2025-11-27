@@ -5,15 +5,13 @@ import tempfile
 import threading
 import queue
 import time
-
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
 from faster_whisper import WhisperModel
-
 import tkinter as tk
 from tkinter import scrolledtext
-from pynput import keyboard # For global hotkey
+from pynput import keyboard 
 
 # --------------------
 # CONFIGURATION & THEME
@@ -21,26 +19,24 @@ from pynput import keyboard # For global hotkey
 
 IS_MAC = sys.platform == "darwin"
 
-# Hotkey settings
+# Hotkey settings (MODIFIED TO F9 TO AVOID F12 CONFLICTS)
 if IS_MAC:
-    HOTKEY_COMBO = "<cmd>+<shift>+j"
-    HOTKEY_LABEL = "Cmd + Shift + J"
-    # Tkinter binding uses <Command>
-    TK_HOTKEY = "<Command-Shift-J>"
+    HOTKEY_COMBO = "<cmd>+<alt>+f9"
+    HOTKEY_LABEL = "Cmd + Option + F9"
+    TK_HOTKEY = "<Command-Option-F9>"
 else:
-    HOTKEY_COMBO = "<ctrl>+<shift>+j"
-    HOTKEY_LABEL = "Ctrl + Shift + J"
-    # Tkinter binding uses <Control>
-    TK_HOTKEY = "<Control-Shift-J>"
+    HOTKEY_COMBO = "<ctrl>+<alt>+f9"
+    HOTKEY_LABEL = "Ctrl + Alt + F9"
+    TK_HOTKEY = "<Control-Alt-F9>"
 
-MODEL_SIZE = "medium"       # "small", "medium", "large-v3"
-DEVICE = "cpu"              # Change to "cuda" if you have an NVIDIA GPU
-COMPUTE_TYPE = "int8"       # "int8" is faster/lighter on CPU
+MODEL_SIZE = "medium"
+DEVICE = "cpu"
+COMPUTE_TYPE = "int8"
 SAMPLE_RATE = 16000
 CONFIG_PATH = os.path.expanduser("~/.dictaria_config.json")
-MAX_FAVORITES = 5
+MAX_FAVORITES = 3 # Kept for consistency, but favorites UI is removed
 
-# --- IMPROVED THEME (Dark Pro / Slate) ---
+# --- THEME (Dark Pro / Slate) ---
 THEME = {
     "root_bg": "#0f172a",      
     "topbar_bg": "#0f172a",     
@@ -57,20 +53,27 @@ THEME = {
     "record_disabled_fill": "#334155",
     "record_disabled_outline": "#475569",
     "icon_fg": "#0D1116",
-    "fav_active_bg": "#1e293b",
-    "fav_active_fg": "#38bdf8", 
-    "fav_inactive_bg": "#0f172a",
-    "fav_inactive_fg": "#64748b",
+    "pin_active_fg": "#38bdf8", 
+    "pin_inactive_fg": "#64748b", 
 }
 
-# Language Definitions
-LANG_DEFS = [
-    ("es", "🇪🇸", "Español"), ("en", "🇬🇧", "English"),
-    ("ja", "🇯🇵", "日本語"),   ("fr", "🇫🇷", "Français"),
-    ("de", "🇩🇪", "Deutsch"), ("it", "🇮🇹", "Italiano"),
-    ("pt", "🇵🇹", "Português"),("zh", "🇨🇳", "中文"),
-    ("ru", "🇷🇺", "Русский"), ("ko", "🇰🇷", "한국어"),
-]
+# Language Definitions (Simplified for OptionMenu)
+LANG_DEFS = {
+    "es": {"flag": "🇪🇸", "name": "Spanish"}, 
+    "en": {"flag": "🇬🇧", "name": "English"},
+    "ja": {"flag": "🇯🇵", "name": "Japanese"},
+    "fr": {"flag": "🇫🇷", "name": "French"},
+    "de": {"flag": "🇩🇪", "name": "German"},
+    "it": {"flag": "🇮🇹", "name": "Italian"},
+    "pt": {"flag": "🇵🇹", "name": "Portuguese"},
+    "zh": {"flag": "🇨🇳", "name": "Chinese"},
+    "ru": {"flag": "🇷🇺", "name": "Russian"},
+    "ko": {"flag": "🇰🇷", "name": "Korean"},
+}
+LANG_CODES = list(LANG_DEFS.keys())
+# Menu Options are the full English names (e.g., "Spanish 🇪🇸")
+LANG_OPTIONS = [f"{v['name']} {v['flag']}" for v in LANG_DEFS.values()]
+
 
 # Messages
 MSG_LOADING_MODEL = "[Initializing Dictaria... please wait]"
@@ -84,7 +87,7 @@ MSG_COPIED = "[Copied to clipboard]"
 
 
 # --------------------
-# AUDIO RECORDER CLASS
+# AUDIO RECORDER CLASS (No changes)
 # --------------------
 class AudioRecorder:
     """Handles low-level audio capture using sounddevice."""
@@ -159,12 +162,11 @@ class DictariaApp:
         self.recorder = AudioRecorder(sample_rate=SAMPLE_RATE)
         self.model = None
         self.model_loading = True
+        self.is_pinned = False 
         
-        self.favorites = []
-        self.active_language = None
-        self.show_help = True
-        self.lang_vars = {} # For menu checkbuttons
-
+        # Favorites list removed.
+        self.active_language = None 
+        
         # UI Initialization
         self.load_config()
         self.build_ui()
@@ -188,116 +190,130 @@ class DictariaApp:
             # Linux (Uses 'Sans' as a safe generic fallback)
             return "Sans"
 
-       # --- UI CONSTRUCTION ---
+    # --- UI CONSTRUCTION (ULTRA-MINIMALIST) ---
 
     def build_ui(self):
-        self.root.geometry("560x650")
-        self.root.minsize(500, 600)
+        # 1. WINDOW SIZE REDUCED AND ADJUSTED FOR NEW LAYOUT
+        self.root.geometry("300x400") # Smaller window
+        self.root.minsize(280, 350)
         self.root.configure(bg=self.theme["root_bg"])
         self.root.title("Dictaria")
 
-        # Global hotkey (works when the window has focus)
         self.root.bind_all(TK_HOTKEY, lambda e: self.toggle_record())
 
-        # Top bar: only a centered "Languages" dropdown
-        self.topbar = tk.Frame(self.root, bg=self.theme["topbar_bg"], height=40)
-        self.topbar.pack(fill="x")
+        # --- CONTROLS CONTAINER (Replaces Topbar and upper Card_frame) ---
+        # This Frame will contain the pin, the dropdown, and the record button.
+        self.controls_frame = tk.Frame(self.root, bg=self.theme["root_bg"])
+        self.controls_frame.pack(fill="x", padx=10, pady=(10, 5))
+        
+        # We use Grid to organize the 3 key elements horizontally: Pin | Dropdown | Spacer
+        self.controls_frame.columnconfigure(0, weight=0) # Pin
+        self.controls_frame.columnconfigure(1, weight=1) # Dropdown (Expands)
+        self.controls_frame.columnconfigure(2, weight=0) # Spacer 
 
-        # Use grid so we can center the Menubutton
-        self.topbar.columnconfigure(0, weight=1)
+        # 1. PIN BUTTON (Left)
+        self.btn_pin = tk.Canvas(
+            self.controls_frame,
+            width=20,
+            height=20,
+            bg=self.theme["root_bg"],
+            highlightthickness=0,
+            cursor="hand2"
+        )
+        self.btn_pin.grid(row=0, column=0, sticky="w", padx=(0, 5))
+        
+        self.pin_text = self.btn_pin.create_text(
+            10, 10, 
+            text="📌", 
+            font=("Helvetica", 12),
+            fill=self.theme["pin_inactive_fg"]
+        )
+        self.btn_pin.bind("<Button-1>", lambda e: self.toggle_pin())
+        
+        # 2. LANGUAGE DROPDOWN (Center)
+        # Variable to store the selected option (will be the full name + flag)
+        self.lang_var = tk.StringVar(self.controls_frame)
+        self.lang_var.set(LANG_OPTIONS[0]) # Initial value
+        
+        # When the variable value changes, set_active_language_from_menu is called
+        self.lang_var.trace_add("write", self.set_active_language_from_menu)
 
-        self.btn_lang = tk.Menubutton(
-            self.topbar,
-            text="Languages ▾",
-            bg=self.theme["topbar_bg"],
+        self.option_menu_lang = tk.OptionMenu(
+            self.controls_frame,
+            self.lang_var,
+            *LANG_OPTIONS
+        )
+        self.option_menu_lang.config(
+            bg=self.theme["topbar_bg"], 
             fg=self.theme["topbar_fg"],
-            font=("Helvetica", 10),
-            cursor="hand2",
-            relief=tk.FLAT,
+            activebackground=self.theme["border_color"],
+            activeforeground=self.theme["topbar_fg"],
+            bd=0, relief=tk.FLAT, font=("Helvetica", 10),
         )
-        # Centered horizontally
-        self.btn_lang.grid(row=0, column=0, pady=8)
+        # The internal menu widget (the dropdown list) must also be themed
+        menu = self.root.winfo_children()[-1]
+        if isinstance(menu, tk.Menu):
+            menu.config(bg=self.theme["topbar_bg"], fg=self.theme["topbar_fg"], bd=0)
+            
+        self.option_menu_lang.grid(row=0, column=1, sticky="ew", pady=5, padx=5) 
+        
+        # 3. Spacer (column 2) to balance the grid if necessary
+        tk.Label(self.controls_frame, bg=self.theme["root_bg"], width=3).grid(row=0, column=2, sticky="e")
 
-        self.menu_lang = tk.Menu(self.btn_lang, tearoff=0)
-        self.btn_lang.configure(menu=self.menu_lang)
+        # --- BOTTOM CONTROLS: Record Button ---
+        self.controls_bottom_frame = tk.Frame(self.root, bg=self.theme["root_bg"])
+        self.controls_bottom_frame.pack(padx=10, pady=(0, 10))
 
-        for code, flag, name in LANG_DEFS:
-            var = tk.BooleanVar(value=False)
-            self.lang_vars[code] = var
-            self.menu_lang.add_checkbutton(
-                label=f"{flag} {name}",
-                variable=var,
-                command=lambda c=code: self.toggle_favorite(c),
-            )
-
-        # Main card container
-        self.card_frame = tk.Frame(
-            self.root,
-            bg=self.theme["card_bg"],
-            highlightbackground=self.theme["border_color"],
-            highlightthickness=1,
-        )
-        self.card_frame.pack(expand=True, fill="both", padx=20, pady=20)
-
-        # Favorites bar
-        self.fav_container = tk.Frame(self.card_frame, bg=self.theme["card_bg"])
-        self.fav_container.pack(pady=(15, 5))
-
-        # Record button (canvas)
+        # Record button (canvas) (60x60)
         self.canvas_btn = tk.Canvas(
-            self.card_frame,
-            width=80,
-            height=80,
-            bg=self.theme["card_bg"],
+            self.controls_bottom_frame,
+            width=60,
+            height=60,
+            bg=self.theme["root_bg"],
             highlightthickness=0,
         )
-        self.canvas_btn.pack(pady=5)
+        self.canvas_btn.pack(pady=(0, 5))
         self.record_indicator = self.canvas_btn.create_oval(
-            10,
-            10,
-            70,
-            70,
+            5, 5, 55, 55,
             fill=self.theme["record_disabled_fill"],
             outline=self.theme["record_disabled_outline"],
             width=3,
         )
         self.canvas_btn.bind("<Button-1>", lambda e: self.toggle_record())
 
-        # Text area
-        self.text_frame = tk.Frame(self.card_frame, bg=self.theme["text_frame_bg"])
-        self.text_frame.pack(fill="both", expand=True, padx=15, pady=10)
+        # --- TEXT AREA (Now occupies almost all remaining space) ---
+        self.text_frame = tk.Frame(self.root, bg=self.theme["text_frame_bg"])
+        # We use fill/expand so it stretches maximally
+        self.text_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
         self.text_box = scrolledtext.ScrolledText(
             self.text_frame,
             wrap=tk.WORD,
-            font=("Helvetica", 12),
+            font=("Helvetica", 11),
             bg=self.theme["text_box_bg"],
             fg=self.theme["text_fg"],
-            insertbackground="white",  # caret color
+            insertbackground="white", 
             bd=0,
             padx=10,
             pady=10,
         )
         self.text_box.pack(fill="both", expand=True)
 
-        # Try to darken the scrollbar (tkinter.scrolledtext exposes .vbar)
         try:
             self.text_box.vbar.config(
-                bg=self.theme["card_bg"],              # scrollbar track
+                bg=self.theme["root_bg"],              
                 troughcolor=self.theme["border_color"],
                 activebackground=self.theme["record_idle_fill"],
                 highlightthickness=0,
                 bd=0,
             )
         except Exception:
-            # On some platforms/themes these options may be ignored
             pass
 
         # Text tags (system vs error)
-        # System messages: same red as the record button
         self.text_box.tag_config(
             "sys",
-            foreground=self.theme["record_idle_fill"],  # #ef4444
+            foreground=self.theme["record_idle_fill"], 
             font=("Helvetica", 10, "italic"),
         )
         self.text_box.tag_config(
@@ -306,10 +322,95 @@ class DictariaApp:
             font=("Helvetica", 10, "bold"),
         )
 
-        # Initial status message
         self.append_system(MSG_LOADING_MODEL)
 
-    # --- LOGIC & THREADING ---
+
+    # --- LANGUAGE AND CONFIGURATION LOGIC (UPDATED) ---
+
+    def _get_lang_code_from_option(self, option_text):
+        """Converts 'Spanish 🇪🇸' back to 'es'."""
+        for code, defs in LANG_DEFS.items():
+            if option_text.startswith(defs['name']):
+                return code
+        return LANG_CODES[0] # Fallback to the first language
+
+    def set_active_language_from_menu(self, *args):
+        """Automatically called when the OptionMenu changes."""
+        selected_option = self.lang_var.get()
+        new_code = self._get_lang_code_from_option(selected_option)
+        
+        # Prevent infinite loops if the trace is triggered on load
+        if new_code != self.active_language:
+            self.active_language = new_code
+            self.append_system(f"[Language set to: {LANG_DEFS[new_code]['name']}]")
+            self.update_record_button_style()
+            self.save_config()
+
+
+    # --- REMOVED: refresh_favorites_bar (no longer exists) ---
+
+
+    def load_config(self):
+        """Loads config and sets the active language."""
+        initial_lang_code = LANG_CODES[0] # Default to the first defined language
+        
+        if os.path.exists(CONFIG_PATH):
+            try:
+                with open(CONFIG_PATH, "r") as f:
+                    data = json.load(f)
+                    
+                    # Load the active language (if valid)
+                    last_active = data.get("active", initial_lang_code)
+                    if last_active in LANG_CODES:
+                        initial_lang_code = last_active
+                        
+            except Exception:
+                pass
+                
+        self.active_language = initial_lang_code
+
+
+    def apply_config_to_ui(self):
+        """Applies the active language to the UI dropdown."""
+        
+        if self.active_language:
+            # Find the full menu option matching the saved code
+            active_option = f"{LANG_DEFS[self.active_language]['name']} {LANG_DEFS[self.active_language]['flag']}"
+            
+            if active_option in LANG_OPTIONS:
+                # Set the OptionMenu variable value
+                self.lang_var.set(active_option)
+            else:
+                # Fallback to the first language if the saved code is invalid
+                self.active_language = LANG_CODES[0]
+                self.lang_var.set(LANG_OPTIONS[0])
+                
+        self.update_record_button_style()
+
+
+    def save_config(self):
+        """Saves only the active language."""
+        data = {
+            "active": self.active_language 
+        }
+        try:
+            with open(CONFIG_PATH, "w") as f:
+                json.dump(data, f)
+        except Exception as e:
+            print(f"Config Save Error: {e}")
+
+    # --- APP LOGIC (Minimum adjustments) ---
+
+    def toggle_pin(self):
+        """Toggles the 'always on top' state of the window."""
+        self.is_pinned = not self.is_pinned
+        self.root.attributes('-topmost', self.is_pinned)
+        
+        color = self.theme["pin_active_fg"] if self.is_pinned else self.theme["pin_inactive_fg"]
+        self.btn_pin.itemconfig(self.pin_text, fill=color)
+        
+        pin_state = "ON" if self.is_pinned else "OFF"
+        self.append_system(f"[Pin Mode {pin_state}]")
 
     def _load_model_thread(self):
         """Loads the Whisper model in background."""
@@ -321,8 +422,6 @@ class DictariaApp:
                 compute_type=COMPUTE_TYPE
             )
             self.model_loading = False
-            
-            # Safe UI Update
             self.root.after(0, lambda: self.append_system(MSG_MODEL_READY.format(HOTKEY_LABEL)))
             self.root.after(0, self.update_record_button_style)
             print("Model loaded successfully.")
@@ -334,17 +433,11 @@ class DictariaApp:
     def toggle_record(self):
         """Main action: Start or Stop recording."""
         if self.model_loading:
-            return # Ignore clicks while loading
-
-        # --- FIX: Ensure a language is always selected if favorites exist ---
+            return 
+            
         if self.active_language is None:
-            if self.favorites:
-                self.active_language = self.favorites[0]
-                self.refresh_favorites_bar()
-            else:
-                self.append_system(MSG_SELECT_LANG, tag="error")
-                return
-        # -------------------------------------------------------------------
+            self.append_system(MSG_SELECT_LANG, tag="error")
+            return
 
         if not self.recorder.is_recording:
             # --- START RECORDING ---
@@ -360,7 +453,6 @@ class DictariaApp:
                 self.append_system(MSG_NO_AUDIO)
                 return
             
-            # Run transcription in a separate thread to keep UI responsive
             lang = self.active_language
             threading.Thread(
                 target=self._transcribe_task, 
@@ -378,7 +470,6 @@ class DictariaApp:
         
         try:
             sf.write(tmp_name, audio, SAMPLE_RATE)
-            
             segments, info = self.model.transcribe(
                 tmp_name, 
                 language=lang,
@@ -389,7 +480,7 @@ class DictariaApp:
             full_text = " ".join([seg.text.strip() for seg in segments]).strip()
             
             if full_text:
-                # Use the new function that appends and copies
+                # Appends text and copies it to the clipboard
                 self.root.after(0, lambda t=full_text: self.safe_append_and_copy(t))
             else:
                 self.safe_append_system(MSG_NO_AUDIO)
@@ -400,34 +491,21 @@ class DictariaApp:
             if os.path.exists(tmp_name):
                 os.remove(tmp_name)
 
-    # --- UI HELPERS (Thread Safe) ---
+    # --- UI HELPERS (Thread Safe) (No changes) ---
 
     def safe_append_system(self, text, tag="sys"):
         self.root.after(0, lambda: self.append_system(text, tag))
 
-    # --- NEW METHOD: Appends text and copies it to the clipboard ---
     def safe_append_and_copy(self, text):
         """Appends transcribed text to the box and copies it to the clipboard."""
-        
-        # 1. Append text to the text box
         self.text_box.insert(tk.END, text + "\n")
         self.text_box.see(tk.END)
-
-        # 2. Copy to clipboard (requires being on the main thread)
         try:
             self.root.clipboard_clear()
             self.root.clipboard_append(text)
             self.append_system(MSG_COPIED)
         except tk.TclError:
-            # This can happen if the clipboard is locked or system fails
             self.append_system("[Warning: Failed to copy to clipboard]", tag="error")
-
-    # --- END NEW METHOD ---
-
-    # Kept for reference, but safe_append_and_copy is now used for transcription output
-    def safe_append_text(self, text):
-        self.root.after(0, lambda: self.text_box.insert(tk.END, text))
-        self.root.after(0, lambda: self.text_box.see(tk.END))
 
     def append_system(self, text, tag="sys"):
         self.text_box.insert(tk.END, text + "\n", tag)
@@ -451,130 +529,6 @@ class DictariaApp:
             outline=outline
         )
 
-    # --- SETTINGS & FAVORITES ---
-
-    def toggle_favorite(self, code):
-        """Handles menu clicks."""
-        is_checked = self.lang_vars[code].get()
-        
-        if is_checked:
-            if code not in self.favorites:
-                if len(self.favorites) >= MAX_FAVORITES:
-                    self.lang_vars[code].set(False) # Revert
-                    self.append_system("[Favorites limit reached]", tag="error")
-                    return
-                self.favorites.append(code)
-                # Auto-select if first one
-                if self.active_language is None:
-                    self.active_language = code
-        else:
-            if code in self.favorites:
-                self.favorites.remove(code)
-                if self.active_language == code:
-                    self.active_language = self.favorites[0] if self.favorites else None
-        
-        self.refresh_favorites_bar()
-        self.save_config()
-
-    def set_active_language(self, code):
-        self.active_language = code
-        self.refresh_favorites_bar()
-        self.save_config()
-
-    def refresh_favorites_bar(self):
-        # Clear existing widgets
-        for widget in self.fav_container.winfo_children():
-            widget.destroy()
-            
-        # Get the determined safe font name
-        emoji_font_name = self._get_emoji_font_name()
-        
-        # Define sizes for the circle/canvas
-        CIRCLE_SIZE = 40  # Diameter of the circle
-        CANVAS_SIZE = 50  # Canvas width/height (padding added)
-        
-        # Define colors: Dark gray circle when inactive, Red circle when active.
-        INACTIVE_COLOR = "#475569" # Slate 600 (Dark Gray)
-        ACTIVE_COLOR = self.theme["record_idle_fill"]       # Red (#ef4444)
-        CANVAS_BG = self.theme["card_bg"] # Background of the card frame (This ensures the flag container has no visible background)
-
-        # Rebuild
-        for code in self.favorites:
-            # Find flag definition
-            flag = next((f for c, f, n in LANG_DEFS if c == code), "?")
-            is_active = (code == self.active_language)
-            
-            # Determine circle fill color based on state
-            circle_fill = ACTIVE_COLOR if is_active else INACTIVE_COLOR
-            
-            # --- 1. Create Canvas (This acts as the container for the circle and flag) ---
-            canvas = tk.Canvas(
-                self.fav_container,
-                width=CANVAS_SIZE,
-                height=CANVAS_SIZE,
-                bg=CANVAS_BG, # Set canvas background to match card_bg
-                highlightthickness=0,
-                cursor="hand2"
-            )
-            canvas.pack(side="left", padx=5)
-
-            # --- 2. Draw the Circle (Oval) with the determined color ---
-            # Coordinates are (x0, y0, x1, y1). Here 5px padding on each side for a 40px circle.
-            canvas.create_oval(
-                5, 5, 45, 45, 
-                fill=circle_fill,
-                outline="",
-                width=0
-            )
-            
-            # --- 3. Place the Flag Emoji in the center ---
-            # Coordinates (x, y) = (CANVAS_SIZE / 2, CANVAS_SIZE / 2)
-            canvas.create_text(
-                CANVAS_SIZE // 2, 
-                CANVAS_SIZE // 2, 
-                text=flag,
-                font=(emoji_font_name, 16), 
-                fill="white"
-            )
-            
-            # --- 4. Bind click event to the canvas ---
-            canvas.bind("<Button-1>", lambda e, c=code: self.set_active_language(c))
-            
-        self.update_record_button_style()
-
-    def load_config(self):
-        """Loads config and ensures the first favorite is selected if available."""
-        if not os.path.exists(CONFIG_PATH):
-            return
-        try:
-            with open(CONFIG_PATH, "r") as f:
-                data = json.load(f)
-                self.favorites = data.get("favorites", [])
-                
-                # --- FIX: Ensure the active language is always the first favorite ---
-                if self.favorites:
-                    self.active_language = self.favorites[0]
-                else:
-                    self.active_language = None
-        except Exception:
-            pass
-
-    def apply_config_to_ui(self):
-        # Sync menu variables
-        for code, var in self.lang_vars.items():
-            var.set(code in self.favorites)
-        self.refresh_favorites_bar()
-
-    def save_config(self):
-        data = {
-            "favorites": self.favorites,
-            "active": self.active_language # Save active state
-        }
-        try:
-            with open(CONFIG_PATH, "w") as f:
-                json.dump(data, f)
-        except Exception as e:
-            print(f"Config Save Error: {e}")
 
 # --------------------
 # GLOBAL HOTKEY SETUP (pynput)
@@ -583,6 +537,10 @@ def start_global_hotkey_listener(app_instance):
     """
     Starts the global hotkey listener in a daemon thread using pynput.
     This runs even if the app is in the background.
+    
+    NOTE: On macOS/Linux/Windows, this requires OS-level permissions (e.g., 
+    Accessibility/Input Monitoring). If this fails, the hotkey will only 
+    work when the Dictaria window is focused.
     """
     def on_activate():
         print(f"Global hotkey {HOTKEY_LABEL} pressed.")
@@ -595,11 +553,13 @@ def start_global_hotkey_listener(app_instance):
         })
         listener.daemon = True
         listener.start()
-        print("Global hotkey listener started (pynput).")
+        print(f"Global hotkey listener started (pynput). Hotkey: {HOTKEY_LABEL}")
         return listener
     except Exception as e:
+        # The specific error 'f12' indicates a key is intercepted by the OS/Shell.
         print(f"Error starting pynput global hotkey listener: {e}")
-        print("Falling back to in-app hotkey only.")
+        print("ACTION REQUIRED: The global hotkey is likely failing due to missing OS permissions or a conflicting system shortcut. Please check your OS settings.")
+        print("Falling back to in-app hotkey only (only works when the window is focused).")
         return None
 
 # --------------------
