@@ -1,8 +1,9 @@
+
 <p align="center">
   <img src="icon.png" alt="Dictaria icon" width="180">
 </p>
 
-# Dictaria 🎤 - Local Speech-to-Text Powered by Faster Whisper
+# Dictaria 🎤 - Local Speech-to-Text Tool Powered by Faster Whisper
 
 Dictaria is a small, cross-platform desktop tool designed for multi-language speech-to-text transcription. It runs entirely **locally** on your machine, ensuring privacy and speed.
 
@@ -11,16 +12,18 @@ It leverages the power of **`faster-whisper`** for high-performance transcriptio
 ## ✨ Features
 
 - **Local Processing:** All speech-to-text processing happens instantly on your machine (CPU or GPU).
-- **High Performance:** Uses `faster-whisper` for efficient transcription.
-- **Multi-Language Support:** Supports all languages available in Whisper.
+- **High Performance:** Uses `faster-whisper` for efficient inference.
+- **Multi-Language Support:** Whisper supports many languages; Dictaria's UI exposes **10 common ones** by default (Spanish, English, Japanese, French, German, Italian, Portuguese, Chinese, Russian, Korean).
 - **Favorites:** Select up to **5 favorite languages** displayed as clickable flag icons.
 - **Global Hotkey:** Use a convenient hotkey (`Ctrl/Cmd + Shift + J`) to toggle recording from any application.
 - **Minimalist GUI:** Dark-themed, distraction-free interface built with native Tkinter.
 - **Configuration Persistence:** Remembers your favorite languages, active language, and theme using a simple JSON config file.
 
+---
+
 ## 🛠️ Installation and Setup
 
-Dictaria requires **Python 3.8+**. The core dependency for audio handling is `sounddevice`, which requires the **PortAudio** library to be installed on your system.
+Dictaria requires **Python 3.10+** (**3.11+ recommended**). The core dependency for audio handling is `sounddevice`, which requires the **PortAudio** library to be installed on your system.
 
 ### 1. Clone the Repository
 
@@ -68,19 +71,39 @@ sudo apt install libportaudio2 libportaudio-dev
 
 ### 4\. Install Python Dependencies
 
-Install the required Python libraries using the provided `requirements.txt`:
+Install the required Python libraries using the `requirements.txt` provided:
 
 bash
 pip install -r requirements.txt
 
 
-**Requirements:**
+**Contents of `requirements.txt`:**
 
   - `faster-whisper`
   - `sounddevice`
   - `soundfile`
   - `numpy`
-  - `pynput` (for the global hotkey)
+  - `pynput`
+
+-----
+
+## 🔒 5. macOS Permissions (Crucial for Hotkey & Audio)
+
+On macOS, the operating system restricts access to the microphone and global keyboard functions for security reasons. You must grant permissions for Dictaria to function fully.
+
+### 🎙️ Microphone Permission
+
+If recording doesn't work (no sound input):
+
+1.  Go to **System Settings** → **Privacy & Security** → **Microphone**.
+2.  Ensure that **Terminal** (or your Dictaria application launcher) is checked and has access.
+
+### ⌨️ Accessibility / Input Monitoring (For Global Hotkey)
+
+If the global hotkey (`Cmd + Shift + J`) doesn't work when the app is in the background:
+
+1.  Go to **System Settings** → **Privacy & Security** → **Input Monitoring** or **Accessibility**.
+2.  If you see a warning like: `This process is not trusted! Input event monitoring will not be possible...`, you must manually add and enable the **Terminal** (or your Dictaria application launcher) to this list.
 
 -----
 
@@ -92,13 +115,7 @@ bash
 python dictaria.py
 
 
-### Initial Use and Setup
-
-1.  **Model Download:** The first time you run the script, it will display `[Initializing AI Model... please wait]` while downloading the `medium` Whisper model to your machine. This may take a few minutes.
-2.  **Select Language:** Once the model is loaded, use the **Languages ▾** menu to select your desired languages (up to 5 favorites are recommended).
-3.  **Start Dictation:** Click the round button or press the **Global Hotkey** to start recording.
-
-## ⌨️ Global Hotkey
+### Global Hotkey
 
 The global hotkey toggles recording on and off from any running application.
 
@@ -107,46 +124,27 @@ The global hotkey toggles recording on and off from any running application.
 | **macOS** | `Command + Shift + J` | `Cmd + Shift + J` |
 | **Windows/Linux** | `Control + Shift + J` | `Ctrl + Shift + J` |
 
-> **Note on Hotkeys:** Global hotkey functionality relies on the `pynput` library. On some systems (especially Linux Wayland or certain macOS security settings), the global hotkey may only work reliably when the Dictaria window is focused.
+-----
 
-## 🌎 Languages and Favorites
+## ⚙️ Model Configuration
 
-Dictaria supports an extensive list of languages.
+The core model settings are defined at the top of the `dictaria.py` script:
 
-  - **Favorites Row:** A row of up to 5 flag icons appears above the record button.
-  - **Active Language:** Clicking a flag sets it as the **Active Language**. The active language determines the code passed to the Whisper model and enables the record button.
-  - **No Active Language:** If no language is selected, the record button remains grey and a system message prompts you to choose one.
+python
+MODEL_SIZE = "medium"       # "small", "medium", "large-v3"
+DEVICE = "cpu"              # Change to "cuda" if you have an NVIDIA GPU
+COMPUTE_TYPE = "int8"       # "int8" is faster/lighter on CPU
 
-## ⚙️ Configuration File
 
-Dictaria automatically creates and updates a small JSON file in your home directory (`~/.dictaria_config.json`). This file saves your last settings, ensuring your environment is ready immediately upon next launch.
-
-**Example `~/.dictaria_config.json`:**
-
-json
-{
- "favorites": ["en", "es", "ja"],
- "active_language": "en"
-}
-
+  - **`MODEL_SIZE`:** You can change this to `small` (faster, less accurate) or `large-v3` (slower, more accurate). The model will be downloaded upon first launch.
+  - **`DEVICE`:** Processing defaults to **CPU**. If you have an NVIDIA GPU, you can change the value to `"cuda"` for significant acceleration (requires proper CUDA and PyTorch setup).
 
 -----
 
-## 📝 How it Works Internally
+## 📜 Credits and License
 
-Dictaria is a single Python script that manages the entire workflow:
-
-1.  **Initialization:** Loads the selected `faster-whisper` model in a **background thread** to ensure the GUI opens instantly.
-2.  **Recording:** Uses `sounddevice` to stream microphone audio into a buffer (`numpy` array) in real-time.
-3.  **Transcription:** When recording stops, the audio is saved to a temporary `.wav` file.
-4.  **Inference:** `WhisperModel.transcribe()` is called using the **Active Language** code.
-5.  **Output:** The resulting text is appended to the scrollable text box using a **thread-safe mechanism** (`root.after`) to prevent the Tkinter GUI from freezing.
-
-## 📄 Credits and License
-
-  - Vibe-coded with ChatGPT (GPT-5.1 Thinking).
   - Core transcription technology provided by [faster-whisper](https://github.com/SYSTRAN/faster-whisper).
+  - Vibe-coded with assistance from Google's Gemini models.
 
 This project is licensed under the **MIT License**.
-
-
+See the LICENSE file for details.
