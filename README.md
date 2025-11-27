@@ -18,9 +18,7 @@ It listens to your microphone, transcribes audio locally using [faster-whisper](
 * **Pin button** 📌 to keep the window **always on top** (primer plano).
 * Multi-language support via a single dropdown:
     * Dictaria’s UI exposes 10 common ones by default: Spanish, English, Japanese, French, German, Italian, Portuguese, Chinese, Russian, Korean.
-* Global hotkey:
-    * macOS: **`Cmd + Option + F9` (Requires Hammerspoon)**
-    * Windows / Linux: **`Ctrl + Alt + F9` (via pynput)**
+* Global and In-Window hotkeys (see table below).
 * Simple UI:
     * **Compact and minimalist window size.**
     * Circular red button to start/stop recording.
@@ -28,6 +26,17 @@ It listens to your microphone, transcribes audio locally using [faster-whisper](
     * Status messages in English: `[Listening...]`, `[Transcribing...]`, etc.
 * Persistent config in `~/.dictaria_config.json`:
     * Last active language.
+
+---
+
+## ⌨️ Global Hotkey Behavior
+
+| Platform | Global Hotkey (Active outside app) | In-Window Hotkey (Always available) | Requirements |
+| :--- | :--- | :--- | :--- |
+| **macOS** 🍎 | `Cmd + Option + F9` | `Cmd + Option + F9` | **Hammerspoon** setup. |
+| **Windows / Linux** 🐧 | `Ctrl + Alt + F9` | `Ctrl + Alt + F9` | **`pynput`** installed. |
+
+> **IMPORTANT NOTE (Windows/Linux):** The global hotkey relies on the Python library **`pynput`**. If `pynput` is not installed or encounters permission issues, Dictaria automatically **falls back to the in-window hotkey only**.
 
 ---
 
@@ -46,8 +55,8 @@ Python packages (also listed in `requirements.txt`):
 * `sounddevice`
 * `soundfile`
 * `numpy`
-* **macOS:** You **do not** need `pynput` for the hotkey (handled by Hammerspoon).
 * **Windows/Linux:** You **do** need `pynput` for the global hotkey.
+* **macOS:** You **do not** need `pynput` for the hotkey (handled by Hammerspoon).
 
 > Tkinter is usually bundled with the standard Python installers on macOS and Windows. On many Linux distros you must install the `tk` package from your system package manager (see below).
 
