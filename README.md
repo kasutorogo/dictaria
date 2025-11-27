@@ -19,8 +19,8 @@ It listens to your microphone, transcribes audio locally using [faster-whisper](
 * Multi-language support via a single dropdown:
     * Dictaria’s UI exposes 10 common ones by default: Spanish, English, Japanese, French, German, Italian, Portuguese, Chinese, Russian, Korean.
 * Global hotkey:
-    * macOS: **`Cmd + Option + F9`**
-    * Windows / Linux: **`Ctrl + Alt + F9`**
+    * macOS: **`Cmd + Option + F9` (Requires Hammerspoon)**
+    * Windows / Linux: **`Ctrl + Alt + F9` (via pynput)**
 * Simple UI:
     * **Compact and minimalist window size.**
     * Circular red button to start/stop recording.
@@ -46,7 +46,8 @@ Python packages (also listed in `requirements.txt`):
 * `sounddevice`
 * `soundfile`
 * `numpy`
-* `pynput`
+* **macOS:** You **do not** need `pynput`. The hotkey is managed by Hammerspoon.
+* **Windows/Linux:** You **do** need `pynput` for the global hotkey.
 
 > Tkinter is usually bundled with the standard Python installers on macOS and Windows. On many Linux distros you must install the `tk` package from your system package manager (see below).
 
@@ -69,9 +70,6 @@ Python packages (also listed in `requirements.txt`):
 
     # Windows (PowerShell)
     .venv\Scripts\Activate.ps1
-
-    # Windows (CMD)
-    .venv\Scripts\activate.bat
     ```
 
 3.  Install dependencies:
@@ -81,13 +79,51 @@ Python packages (also listed in `requirements.txt`):
     pip install -r requirements.txt
     ```
 
-4.  Run Dictaria:
+> **Note for macOS users:** The `requirements.txt` includes `pynput` for cross-platform compatibility. If you are only using the Hammerspoon method, you can safely ignore `pynput` installation warnings or use `pip install faster-whisper sounddevice soundfile numpy` instead.
+
+4.  **Run Dictaria:**
 
     ```bash
     python dictaria.py
     ```
 
 > On first launch, faster-whisper will download and load the medium model. This can take a bit of time.
+
+---
+
+## 🚨 Global Hotkey Setup for macOS
+
+Since Dictaria relies on **Hammerspoon** for the global hotkey on macOS, you must follow these extra steps:
+
+### 1. Install Hammerspoon
+
+Download and install [Hammerspoon](https://www.hammerspoon.org/). It requires **Accessibility Permissions** to work.
+
+### 2. Configure Hammerspoon
+
+1.  Open the Hammerspoon Console (Hammer icon > *Open Console*).
+2.  Open your Hammerspoon config file: `~/.hammerspoon/init.lua` (Hammer icon > *Open Config*).
+3.  **Add the following Lua code** to your `init.lua` file:
+
+    ```lua
+    -- Dictaria Hotkey: Cmd + Option + F9 (communicates via a temporary file)
+    local dictaria_hotkey = {"cmd", "alt"} 
+    local dictaria_key = "f9"
+    local signal_file = "/tmp/dictaria_signal_f9.txt" 
+
+    hs.hotkey.bind(dictaria_hotkey, dictaria_key, function()
+        -- Use 'touch' to create the signal file. Dictaria.py polls and deletes it.
+        hs.task.new("/usr/bin/touch", nil, {signal_file}):start()
+    end)
+
+    hs.alert.show("Dictaria Hotkey (Cmd+Alt+F9) enabled.")
+    ```
+4.  **Reload** the configuration (Hammer icon > *Reload Config*). You should see the confirmation alert.
+
+### 3. Permissions Check
+
+* **Microphone:** System Settings → Privacy & Security → Microphone. Ensure your Terminal or Python launcher is enabled.
+* **Hammerspoon:** System Settings → Privacy & Security → Accessibility. Ensure **Hammerspoon** is enabled.
 
 ---
 
@@ -103,12 +139,12 @@ Python packages (also listed in `requirements.txt`):
 2.  Select your language in the dropdown menu (e.g., "Spanish 🇪🇸") to set it as the active language.
 
 3.  **Start dictation** by clicking the red button or pressing the global hotkey:
-    * macOS: **`Cmd + Option + F9`**
+    * macOS: **`Cmd + Option + F9`** (via Hammerspoon)
     * Windows / Linux: **`Ctrl + Alt + F9`**
 
 4.  Press the hotkey again (or click the button) to stop recording and start transcription. **Once transcription is complete, the resulting text will automatically be copied to your clipboard (portapapeles).**
 
-5.  Use el **botón de Pin** 📌 en la esquina superior izquierda para mantener la ventana de Dictaria sobre otras aplicaciones.
+5.  Use the **Pin button** 📌 in the top-left corner to keep the Dictaria window over other applications.
 
 ---
 
@@ -123,6 +159,8 @@ Dictaria stores a tiny JSON file in your home directory: `~/.dictaria_config.jso
 
 ## 🍏 macOS Notes
 
+> **Important:** The global hotkey is handled by **Hammerspoon** (see the setup section above). The Python application no longer handles global input directly.
+
 1.  **PortAudio (for `sounddevice`)**
     If you see audio-related errors, install PortAudio:
     ```bash
@@ -133,11 +171,6 @@ Dictaria stores a tiny JSON file in your home directory: `~/.dictaria_config.jso
 2.  **Microphone Permissions**
     Make sure your terminal (or app wrapper) has access:
     * System Settings → Privacy & Security → Microphone.
-
-3.  **Input Monitoring Permissions (Global Hotkey)**
-    The global hotkey (`Cmd + Option + F9`) requires system-level permissions to work when the app is in the background:
-    * System Settings → Privacy & Security → **Input Monitoring** (or Accessibility).
-    * **You must add the application that runs the Python script** (e.g., Terminal.app, iTerm, or VS Code) and enable its control. If el hotkey falla globalmente, este es el problema.
 
 ---
 
@@ -150,7 +183,7 @@ Dictaria stores a tiny JSON file in your home directory: `~/.dictaria_config.jso
     On recent Windows: Settings → Privacy & security → Microphone. Enable access for desktop apps.
 
 3.  **Global Hotkey**
-    The hotkey is **`Ctrl + Alt + F9`**. If it fails globally, use the in-window hotkey (same combo while Dictaria is focused).
+    The hotkey is **`Ctrl + Alt + F9`** and is handled by the included `pynput` dependency.
 
 ---
 
@@ -165,7 +198,7 @@ Dictaria stores a tiny JSON file in your home directory: `~/.dictaria_config.jso
     ```
 
 2.  **Global Hotkey**
-    The hotkey is **`Ctrl + Alt + F9`**. If your desktop environment intercepts this shortcut, rely on the in-window hotkey.
+    The hotkey is **`Ctrl + Alt + F9`** and is handled by `pynput`. If your desktop environment intercepts this shortcut, rely on the in-window hotkey.
 
 ---
 
@@ -185,6 +218,7 @@ A: Close Dictaria and delete `~/.dictaria_config.json`.
 ## Credits
 
 * Core transcription technology provided by [faster-whisper](https://github.com/SYSTRAN/faster-whisper).
+* **macOS Hotkey solution via File Polling inspired by the Hammerspoon community.**
 * Vibe-coded with assistance from Google's Gemini models and ChatGPT (GPT-5.1 Thinking).
 
 ## License
