@@ -3,148 +3,309 @@
   <img src="icon.png" alt="Dictaria icon" width="180">
 </p>
 
-# Dictaria 🎤 - Local Speech-to-Text Tool Powered by Faster Whisper
+# Dictaria
 
-Dictaria is a small, cross-platform desktop tool designed for multi-language speech-to-text transcription. It runs entirely **locally** on your machine, ensuring privacy and speed.
+Dictaria is a small desktop dictation app.
 
-It leverages the power of **`faster-whisper`** for high-performance transcription and provides a minimalist, distraction-free GUI built with Tkinter.
+It listens to your microphone, transcribes audio locally using [faster-whisper](https://github.com/SYSTRAN/faster-whisper), and dumps everything into a simple multi-language text window with a global hotkey.
 
-## ✨ Features
-
-- **Local Processing:** All speech-to-text processing happens instantly on your machine (CPU or GPU).
-- **High Performance:** Uses `faster-whisper` for efficient inference.
-- **Multi-Language Support:** Whisper supports many languages; Dictaria's UI exposes **10 common ones** by default (Spanish, English, Japanese, French, German, Italian, Portuguese, Chinese, Russian, Korean).
-- **Favorites:** Select up to **5 favorite languages** displayed as clickable flag icons.
-- **Global Hotkey:** Use a convenient hotkey (`Ctrl/Cmd + Shift + J`) to toggle recording from any application.
-- **Minimalist GUI:** Dark-themed, distraction-free interface built with native Tkinter.
-- **Configuration Persistence:** Remembers your favorite languages, active language, and theme using a simple JSON config file.
+> VIBE-CODED with ChatGPT (GPT-5.1 Thinking) and Gemini.
 
 ---
 
-## 🛠️ Installation and Setup
+## Features
 
-Dictaria requires **Python 3.10+** (**3.11+ recommended**). The core dependency for audio handling is `sounddevice`, which requires the **PortAudio** library to be installed on your system.
+* Records from the system default microphone.
+* Local transcription with `faster-whisper` (`medium` model by default).
+* Multi-language support:
+    * Whisper supports many languages.
+    * Dictaria’s UI exposes 10 common ones by default: Spanish, English, Japanese, French, German, Italian, Portuguese, Chinese, Russian, Korean.
+* Favorite languages bar (up to 5 favorites) with emoji flags.
+* Global hotkey:
+    * macOS: `Cmd + Shift + J`
+    * Windows / Linux: `Ctrl + Shift + J`
+* Simple UI:
+    * Circular red button to start/stop recording.
+    * Scrollable text area with all transcriptions.
+    * Status messages in English: `[Listening...]`, `[Transcribing...]`, etc.
+* Persistent config in `~/.dictaria_config.json`:
+    * Favorite languages.
+    * Last active language.
 
-### 1. Clone the Repository
+---
 
-bash
-git clone [https://github.com/YOUR_USER/dictaria.git](https://github.com/YOUR_USER/dictaria.git)
-cd dictaria
+## Requirements
+
+### Common
+
+* **Python 3.10+** (3.11+ recommended).
+* `pip` to install dependencies.
+* Working audio input (microphone).
+* Tkinter available for your Python build (for the GUI).
+
+Python packages (also listed in `requirements.txt`):
+
+* `faster-whisper`
+* `sounddevice`
+* `soundfile`
+* `numpy`
+* `pynput`
+
+> Tkinter is usually bundled with the standard Python installers on macOS and Windows. On many Linux distros you must install the `tk` package from your system package manager (see below).
+
+---
+
+## Quick install (all platforms)
+
+1.  Clone the repository:
+
+    bash
+    git clone [https://github.com/dnlcstr/dictaria.git](https://github.com/dnlcstr/dictaria.git)
+    cd dictaria
+    
+
+2.  Create and activate a virtual environment (recommended):
+
+    bash
+    python -m venv .venv
+
+    # macOS / Linux
+    source .venv/bin/activate
+
+    # Windows (PowerShell)
+    .venv\Scripts\Activate.ps1
+
+    # Windows (CMD)
+    .venv\Scripts\activate.bat
+    
+
+3.  Install dependencies:
+
+    bash
+    pip install --upgrade pip
+    pip install -r requirements.txt
+    
+
+4.  Run Dictaria:
+
+    bash
+    python dictaria.py
+    
+
+> On first launch, faster-whisper will download and load the medium model. This can take a bit of time. You should see messages like:
+>
+> `[Initializing Dictaria Model... please wait]`
+> `[Dictaria Ready. Press Cmd + Shift + J to dictate]`
+> (or `Ctrl + Shift + J` on Windows / Linux).
+
+---
+
+## How to use
+
+1.  **Start Dictaria:**
+    bash
+    cd dictaria
+    source .venv/bin/activate   # or the Windows equivalent
+    python dictaria.py
+    
+
+2.  In the top bar, open **Languages ▾** and select your favorite languages (you can have up to 5). Your favorites appear as flags above the red button. Click a flag to set it as the active language.
+
+3.  **Start dictation** in any of these ways:
+    * Click the red circular button.
+    * Press the global hotkey:
+        * macOS: `Cmd + Shift + J`
+        * Windows / Linux: `Ctrl + Shift + J`
+    * Or, if the global hotkey is not working, use the same combo while the Dictaria window is focused.
+
+4.  **While recording:**
+    * Status line shows `[Listening...]`.
+    * Press the hotkey again (or click the button again) to stop.
+
+5.  **After stopping:**
+    * Status shows `[Transcribing...]`.
+    * The recognized text is appended to the text box.
+    * If audio was too short or silent, you’ll see `[Audio too short or silent]`.
+
+> You can scroll, select, copy and paste from the text area freely.
+
+---
+
+## Configuration
+
+Dictaria stores a tiny JSON file in your home directory: `~/.dictaria_config.json`
+
+It contains for example:
+json
+{
+  "favorites": ["es", "en", "ja"],
+  "active": "es"
+}
 `
 
-### 2\. Create a Virtual Environment (Recommended)
+  * `favorites`: list of language codes you picked in the menu.
+  * `active`: the currently active language (also reflected by the highlighted flag).
 
-This step isolates Dictaria's dependencies from your system Python.
+You can:
 
-bash
-python3 -m venv .venv
-# Activate on macOS/Linux
-source .venv/bin/activate
-# Activate on Windows (Command Prompt)
-# .venv\Scripts\activate.bat
-
-
-### 3\. Install System Audio Dependencies (PortAudio)
-
-You must install the system library **PortAudio** before installing the Python dependencies.
-
-#### 🍏 macOS
-
-Use Homebrew to install PortAudio:
-
-bash
-brew install portaudio
-
-
-#### 💻 Windows
-
-No specific system-level installation is typically required. The Python package installer (`pip`) usually handles necessary DLLs for `sounddevice` on Windows.
-
-#### 🐧 Linux (Debian/Ubuntu)
-
-Use your distribution's package manager (e.g., `apt`) to install PortAudio development headers:
-
-bash
-sudo apt update
-sudo apt install libportaudio2 libportaudio-dev
-
-
-### 4\. Install Python Dependencies
-
-Install the required Python libraries using the `requirements.txt` provided:
-
-bash
-pip install -r requirements.txt
-
-
-**Contents of `requirements.txt`:**
-
-  - `faster-whisper`
-  - `sounddevice`
-  - `soundfile`
-  - `numpy`
-  - `pynput`
+  * Change favorites in the **Languages ▾** menu.
+  * Click flags to change the active language.
+  * Delete `~/.dictaria_config.json` if you want to reset everything.
 
 -----
 
-## 🔒 5. macOS Permissions (Crucial for Hotkey & Audio)
+## macOS notes
 
-On macOS, the operating system restricts access to the microphone and global keyboard functions for security reasons. You must grant permissions for Dictaria to function fully.
+1.  **Tkinter**
 
-### 🎙️ Microphone Permission
+    If you installed Python via:
 
-If recording doesn't work (no sound input):
+      * the official installer from `python.org`, or
+      * Homebrew (`brew install python`)
 
-1.  Go to **System Settings** → **Privacy & Security** → **Microphone**.
-2.  Ensure that **Terminal** (or your Dictaria application launcher) is checked and has access.
+    Tkinter usually comes bundled. If you get errors that mention `Tk` or `tkinter`, re-install Python from `python.org` or ensure `python-tk/tk` is installed for your specific Python build.
 
-### ⌨️ Accessibility / Input Monitoring (For Global Hotkey)
+2.  **PortAudio (for `sounddevice`)**
 
-If the global hotkey (`Cmd + Shift + J`) doesn't work when the app is in the background:
+    Normally the wheel includes what you need, but if you see audio-related errors, install PortAudio:
 
-1.  Go to **System Settings** → **Privacy & Security** → **Input Monitoring** or **Accessibility**.
-2.  If you see a warning like: `This process is not trusted! Input event monitoring will not be possible...`, you must manually add and enable the **Terminal** (or your Dictaria application launcher) to this list.
+    bash
+    brew install portaudio
+    pip install --force-reinstall sounddevice
+    
+
+3.  **Microphone permissions**
+
+    Make sure your terminal (or app wrapper) has access to the microphone:
+
+      * System Settings → Privacy & Security → Microphone.
+      * Enable access for Terminal / iTerm / your preferred terminal.
+
+4.  **Accessibility permissions (global hotkey)**
+
+    The global hotkey uses `pynput`, which requires accessibility / input monitoring permissions on macOS:
+
+      * System Settings → Privacy & Security → Accessibility.
+      * Add your terminal (and/or your Dictaria `.app` wrapper if you create one).
+      * Enable “Allow this app to control your computer”.
+
+    If not granted:
+
+      * The global hotkey won’t work.
+      * The in-window hotkey (`Cmd + Shift + J` with Dictaria focused) still works.
+
+5.  **Optional: Automator `.app` wrapper**
+
+    You can create a clickable app icon using Automator:
+
+      * Open Automator → create a new **Application**.
+      * Add a **Run Shell Script** action.
+      * Use something like:
+        bash
+        cd /Users/your-user/Documents/python_projects/dictaria
+        source .venv/bin/activate
+        python dictaria.py
+        
+      * Save as `Dictaria.app`.
+      * Give it microphone and accessibility permissions if you want to use the global hotkey.
+
+    > Put your `icon.png` in the same directory as `dictaria.py` so Tk can use it as a window icon.
 
 -----
 
-## ▶️ Running Dictaria
+## Windows notes
 
-From the project folder, with your virtual environment activated:
+1.  **Python & Tkinter**
 
-bash
-python dictaria.py
+    Install Python from `python.org`:
 
+      * Check **“Add Python to PATH”** during installation.
+      * Tkinter is included by default.
 
-### Global Hotkey
+2.  **Dependencies**
 
-The global hotkey toggles recording on and off from any running application.
+    Inside the virtual environment: `pip install -r requirements.txt`
 
-| OS | Key Combination | Hotkey Label |
-| :--- | :--- | :--- |
-| **macOS** | `Command + Shift + J` | `Cmd + Shift + J` |
-| **Windows/Linux** | `Control + Shift + J` | `Ctrl + Shift + J` |
+      * If you see build errors with any package, make sure you are using a supported Python version (3.10+).
 
------
+3.  **Microphone permissions**
 
-## ⚙️ Model Configuration
+    On recent Windows:
 
-The core model settings are defined at the top of the `dictaria.py` script:
+      * Settings → Privacy & security → Microphone.
+      * Enable “Microphone access”.
+      * Enable “Let desktop apps access your microphone”.
 
-python
-MODEL_SIZE = "medium"       # "small", "medium", "large-v3"
-DEVICE = "cpu"              # Change to "cuda" if you have an NVIDIA GPU
-COMPUTE_TYPE = "int8"       # "int8" is faster/lighter on CPU
+    Then run Dictaria again from a terminal.
 
+4.  **Global hotkey**
 
-  - **`MODEL_SIZE`:** You can change this to `small` (faster, less accurate) or `large-v3` (slower, more accurate). The model will be downloaded upon first launch.
-  - **`DEVICE`:** Processing defaults to **CPU**. If you have an NVIDIA GPU, you can change the value to `"cuda"` for significant acceleration (requires proper CUDA and PyTorch setup).
+    On Windows the global hotkey is: `Ctrl + Shift + J`.
+    If another app grabs that combo or your system blocks low-level hooks, you may see an error in the console and the global hotkey won’t fire. You can always fall back to the in-window hotkey.
 
 -----
 
-## 📜 Credits and License
+## Linux notes
 
-  - Core transcription technology provided by [faster-whisper](https://github.com/SYSTRAN/faster-whisper).
-  - Vibe-coded with assistance from Google's Gemini models.
+Linux is more fragmented, but the typical setup on Debian/Ubuntu-like systems is:
 
-This project is licensed under the **MIT License**.
-See the LICENSE file for details.
+1.  **System packages**
+
+    bash
+    sudo apt update
+    sudo apt install -y python3 python3-venv python3-tk \
+                        libportaudio2 libsndfile1
+    
+
+      * `python3-tk` → Tkinter.
+      * `libportaudio2` → required by `sounddevice`.
+      * `libsndfile1` → required by `soundfile`.
+
+    Then follow the installation steps (clone, venv, `pip install`).
+
+2.  **Fonts / emoji flags**
+
+    The app tries to use emoji fonts for the language flags and falls back to a generic Sans font on Linux. If your desktop does not have a color emoji font installed, you’ll still see language markers, but flags may look like monochrome glyphs.
+
+3.  **Global hotkey**
+
+    On Linux the hotkey is: `Ctrl + Shift + J`. Some desktop environments may intercept this shortcut for their own shortcuts. If you don’t see the `Global hotkey ... pressed.` message in your terminal when pressing it, either:
+
+      * Choose another combination in the code, or
+      * Rely on the in-window hotkey (same combo, but with Dictaria focused).
+
+-----
+
+## FAQ
+
+**Q: Does Dictaria work offline?**
+A: After the model is downloaded the first time, transcription is local. No audio is sent anywhere by this script.
+
+**Q: Can I use a different model (small, large-v3)?**
+A: Yes. In `dictaria.py`, change:
+`MODEL_SIZE = "medium" # "small", "medium", "large-v3"`
+Larger models use more RAM/VRAM and are slower, especially on CPU.
+
+**Q: How do I reset languages and favorites?**
+A: Close Dictaria and delete `~/.dictaria_config.json`. Next launch will start with no favorites.
+
+-----
+
+## License
+
+Choose a license you prefer (for example MIT):
+
+
+MIT License
+Copyright (c) 2025 YOUR NAME
+(Replace this section with the full text of your actual license.)
+
+
+txt
+# requirements.txt
+
+faster-whisper
+sounddevice
+soundfile
+numpy
+pynput
