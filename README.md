@@ -72,12 +72,13 @@ Python packages (also listed in `requirements.txt`):
 2.  Create and activate a virtual environment (recommended):
 
     ```bash
-    python -m venv .venv
-    # macOS / Linux
-    source .venv/bin/activate
-    # Windows (PowerShell)
-    .venv\Scripts\Activate.ps1
-    ```
+    python -m venv .venv```
+    
+    ```# macOS / Linux
+    source .venv/bin/activate```
+     
+    ```# Windows (PowerShell)
+    .venv\Scripts\Activate.ps1```
 
 3.  Install dependencies:
 
