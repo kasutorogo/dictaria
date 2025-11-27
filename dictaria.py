@@ -170,6 +170,13 @@ class DictariaApp:
         self.root = root
         self.theme = THEME
 
+        # --- Collapse State and Heights ---
+        self.is_collapsed = False
+        self.INITIAL_SIZE = "300x400"
+        self.MIN_HEIGHT = 160 
+        self.ORIGINAL_WIDTH = 0
+        self.ORIGINAL_HEIGHT = 0
+        
         self.recorder = AudioRecorder(sample_rate=SAMPLE_RATE)
         self.model = None
         self.model_loading = True
@@ -215,21 +222,21 @@ class DictariaApp:
 
     # --- UI CONSTRUCTION (ULTRA-MINIMALIST) ---
     def build_ui(self):
-        self.root.geometry("300x400")
-        self.root.minsize(280, 350)
+        self.root.geometry(self.INITIAL_SIZE)
+        self.root.minsize(280, self.MIN_HEIGHT) 
         self.root.configure(bg=self.theme["root_bg"])
         self.root.title("Dictaria")
 
         # In-window hotkey
         self.root.bind_all(TK_HOTKEY, lambda e: self.toggle_record())
 
-        # Controls frame
+        # Controls frame (Top bar: Pin | Lang | Collapse)
         self.controls_frame = tk.Frame(self.root, bg=self.theme["root_bg"])
         self.controls_frame.pack(fill="x", padx=10, pady=(10, 5))
 
-        self.controls_frame.columnconfigure(0, weight=0)
-        self.controls_frame.columnconfigure(1, weight=1)
-        self.controls_frame.columnconfigure(2, weight=0)
+        self.controls_frame.columnconfigure(0, weight=0) # Pin
+        self.controls_frame.columnconfigure(1, weight=1) # Language
+        self.controls_frame.columnconfigure(3, weight=0) # Collapse
 
         # Pin button
         self.btn_pin = tk.Canvas(
@@ -282,13 +289,30 @@ class DictariaApp:
 
         self.option_menu_lang.grid(row=0, column=1, sticky="ew", pady=5, padx=5)
 
-        tk.Label(self.controls_frame, bg=self.theme["root_bg"], width=3).grid(
-            row=0, column=2, sticky="e"
+        # --- Collapse Button ---
+        self.btn_collapse = tk.Canvas(
+            self.controls_frame,
+            width=20,
+            height=20,
+            bg=self.theme["root_bg"],
+            highlightthickness=0,
+            cursor="hand2",
         )
+        self.btn_collapse.grid(row=0, column=3, sticky="e", padx=(5, 0)) 
+        
+        self.collapse_text = self.btn_collapse.create_text(
+            10,
+            10,
+            text="⬇️",  # Initial state: Down arrow (can collapse)
+            font=("Helvetica", 12),
+            fill=self.theme["pin_inactive_fg"],
+        )
+        self.btn_collapse.bind("<Button-1>", lambda e: self.toggle_collapse())
+        # ---------------------------
 
-        # Record button
+        # Record button frame
         self.controls_bottom_frame = tk.Frame(self.root, bg=self.theme["root_bg"])
-        self.controls_bottom_frame.pack(padx=10, pady=(0, 10))
+        self.controls_bottom_frame.pack(padx=10, pady=(0, 10)) 
 
         self.canvas_btn = tk.Canvas(
             self.controls_bottom_frame,
@@ -311,7 +335,7 @@ class DictariaApp:
 
         # Text area
         self.text_frame = tk.Frame(self.root, bg=self.theme["text_frame_bg"])
-        self.text_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        self.text_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10)) 
 
         self.text_box = scrolledtext.ScrolledText(
             self.text_frame,
@@ -350,6 +374,39 @@ class DictariaApp:
         )
 
         self.append_system(MSG_LOADING_MODEL)
+        
+        # Store original window size
+        self.root.update_idletasks()
+        self.ORIGINAL_WIDTH = self.root.winfo_width()
+        self.ORIGINAL_HEIGHT = self.root.winfo_height()
+
+    # --- NEW COLLAPSE LOGIC ---
+    def toggle_collapse(self):
+        self.is_collapsed = not self.is_collapsed
+
+        if self.is_collapsed:
+            # 1. Hide the text frame (the bulk of the UI)
+            self.text_frame.pack_forget()
+            
+            # 2. Set window size to minimum height
+            self.root.geometry(f"{self.ORIGINAL_WIDTH}x{self.MIN_HEIGHT}")
+            self.root.minsize(self.ORIGINAL_WIDTH, self.MIN_HEIGHT)
+
+            # 3. Change collapse icon
+            self.btn_collapse.itemconfig(self.collapse_text, text="⬆️")
+            self.append_system("[View Collapsed]")
+        else:
+            # 1. Restore window size
+            self.root.geometry(f"{self.ORIGINAL_WIDTH}x{self.ORIGINAL_HEIGHT}")
+            self.root.minsize(280, 350) # Restore general minsize
+
+            # 2. Show the text frame again
+            self.text_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+
+            # 3. Change collapse icon
+            self.btn_collapse.itemconfig(self.collapse_text, text="⬇️")
+            self.append_system("[View Restored]")
+
 
     # --- LANGUAGE / CONFIG ---
     def _get_lang_code_from_option(self, option_text):
