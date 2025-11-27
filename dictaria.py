@@ -42,23 +42,23 @@ MAX_FAVORITES = 5
 
 # --- IMPROVED THEME (Dark Pro / Slate) ---
 THEME = {
-    "root_bg": "#0f172a",       # Slate 900
-    "topbar_bg": "#0f172a",     # Slate 900
-    "topbar_fg": "#e2e8f0",     # Slate 200
-    "card_bg": "#1e293b",       # Slate 800
-    "border_color": "#334155",  # Slate 700
+    "root_bg": "#0f172a",      
+    "topbar_bg": "#0f172a",     
+    "topbar_fg": "#f1f5f9",     
+    "card_bg": "#1e293b",      
+    "border_color": "#334155",  
     "text_frame_bg": "#1e293b", 
-    "text_box_bg": "#334155",   # Dark Input background (easier on eyes)
-    "text_fg": "#f1f5f9",       # Light text
-    "record_idle_fill": "#ef4444",      # Red
+    "text_box_bg": "#0D1116",  
+    "text_fg": "#f1f5f9",      
+    "record_idle_fill": "#ef4444",    
     "record_idle_outline": "#ef4444",
-    "record_active_fill": "#fca5a5",    # Pink/Pale Red (Active state)
+    "record_active_fill": "#fca5a5",    
     "record_active_outline": "#dc2626",
     "record_disabled_fill": "#334155",
     "record_disabled_outline": "#475569",
-    "icon_fg": "#94a3b8",
+    "icon_fg": "#0D1116",
     "fav_active_bg": "#1e293b",
-    "fav_active_fg": "#38bdf8", # Cyan/Blue for active language
+    "fav_active_fg": "#38bdf8", 
     "fav_inactive_bg": "#0f172a",
     "fav_inactive_fg": "#64748b",
 }
@@ -187,42 +187,36 @@ class DictariaApp:
             # Linux (Uses 'Sans' as a safe generic fallback)
             return "Sans"
 
-    # --- UI CONSTRUCTION ---
+       # --- UI CONSTRUCTION ---
 
     def build_ui(self):
         self.root.geometry("560x650")
         self.root.minsize(500, 600)
         self.root.configure(bg=self.theme["root_bg"])
-        self.root.title(f"Dictaria ({MODEL_SIZE})")
+        self.root.title("Dictaria")
 
-        # Global Hotkey (Tkinter's binding is more reliable when app is focused)
+        # Global hotkey (works when the window has focus)
         self.root.bind_all(TK_HOTKEY, lambda e: self.toggle_record())
 
-        # Top Bar
+        # Top bar: only a centered "Languages" dropdown
         self.topbar = tk.Frame(self.root, bg=self.theme["topbar_bg"], height=40)
         self.topbar.pack(fill="x")
 
-        # Title / Hotkey Hint
-        lbl_title = tk.Label(
-            self.topbar, 
-            text=f"Dictaria  |  {HOTKEY_LABEL}", 
-            bg=self.theme["topbar_bg"], 
-            fg=self.theme["topbar_fg"],
-            font=("Helvetica", 11)
-        )
-        lbl_title.pack(side="left", padx=15, pady=8)
+        # Use grid so we can center the Menubutton
+        self.topbar.columnconfigure(0, weight=1)
 
-        # Language Menu
         self.btn_lang = tk.Menubutton(
-            self.topbar, 
-            text="Languages ▾", 
-            bg=self.theme["topbar_bg"], 
+            self.topbar,
+            text="Languages ▾",
+            bg=self.theme["topbar_bg"],
             fg=self.theme["topbar_fg"],
             font=("Helvetica", 10),
-            cursor="hand2", relief=tk.FLAT
+            cursor="hand2",
+            relief=tk.FLAT,
         )
-        self.btn_lang.pack(side="right", padx=15)
-        
+        # Centered horizontally
+        self.btn_lang.grid(row=0, column=0, pady=8)
+
         self.menu_lang = tk.Menu(self.btn_lang, tearoff=0)
         self.btn_lang.configure(menu=self.menu_lang)
 
@@ -232,39 +226,43 @@ class DictariaApp:
             self.menu_lang.add_checkbutton(
                 label=f"{flag} {name}",
                 variable=var,
-                command=lambda c=code: self.toggle_favorite(c)
+                command=lambda c=code: self.toggle_favorite(c),
             )
 
-        # Main Card Container
+        # Main card container
         self.card_frame = tk.Frame(
-            self.root, 
+            self.root,
             bg=self.theme["card_bg"],
             highlightbackground=self.theme["border_color"],
-            highlightthickness=1
+            highlightthickness=1,
         )
         self.card_frame.pack(expand=True, fill="both", padx=20, pady=20)
 
-        # Favorites Bar
+        # Favorites bar
         self.fav_container = tk.Frame(self.card_frame, bg=self.theme["card_bg"])
         self.fav_container.pack(pady=(15, 5))
 
-        # Record Button (Canvas)
+        # Record button (canvas)
         self.canvas_btn = tk.Canvas(
-            self.card_frame, 
-            width=80, height=80, 
-            bg=self.theme["card_bg"], 
-            highlightthickness=0
+            self.card_frame,
+            width=80,
+            height=80,
+            bg=self.theme["card_bg"],
+            highlightthickness=0,
         )
         self.canvas_btn.pack(pady=5)
         self.record_indicator = self.canvas_btn.create_oval(
-            10, 10, 70, 70, 
-            fill=self.theme["record_disabled_fill"], 
-            outline=self.theme["record_disabled_outline"], 
-            width=3
+            10,
+            10,
+            70,
+            70,
+            fill=self.theme["record_disabled_fill"],
+            outline=self.theme["record_disabled_outline"],
+            width=3,
         )
         self.canvas_btn.bind("<Button-1>", lambda e: self.toggle_record())
 
-        # Text Area
+        # Text area
         self.text_frame = tk.Frame(self.card_frame, bg=self.theme["text_frame_bg"])
         self.text_frame.pack(fill="both", expand=True, padx=15, pady=10)
 
@@ -274,17 +272,40 @@ class DictariaApp:
             font=("Helvetica", 12),
             bg=self.theme["text_box_bg"],
             fg=self.theme["text_fg"],
-            insertbackground="white", # Important for dark theme
+            insertbackground="white",  # caret color
             bd=0,
-            padx=10, pady=10
+            padx=10,
+            pady=10,
         )
         self.text_box.pack(fill="both", expand=True)
-        
-        # Configure text tags
-        self.text_box.tag_config("sys", foreground="#94a3b8", font=("Helvetica", 10, "italic"))
-        self.text_box.tag_config("error", foreground="#ef4444", font=("Helvetica", 10, "bold"))
 
-        # Initial Status Message
+        # Try to darken the scrollbar (tkinter.scrolledtext exposes .vbar)
+        try:
+            self.text_box.vbar.config(
+                bg=self.theme["card_bg"],              # scrollbar track
+                troughcolor=self.theme["border_color"],
+                activebackground=self.theme["record_idle_fill"],
+                highlightthickness=0,
+                bd=0,
+            )
+        except Exception:
+            # On some platforms/themes these options may be ignored
+            pass
+
+        # Text tags (system vs error)
+        # System messages: same red as the record button
+        self.text_box.tag_config(
+            "sys",
+            foreground=self.theme["record_idle_fill"],  # #ef4444
+            font=("Helvetica", 10, "italic"),
+        )
+        self.text_box.tag_config(
+            "error",
+            foreground="#ef4444",
+            font=("Helvetica", 10, "bold"),
+        )
+
+        # Initial status message
         self.append_system(MSG_LOADING_MODEL)
 
     # --- LOGIC & THREADING ---
@@ -446,26 +467,56 @@ class DictariaApp:
         # Get the determined safe font name
         emoji_font_name = self._get_emoji_font_name()
         
+        # Define sizes for the circle/canvas
+        CIRCLE_SIZE = 40  # Diameter of the circle
+        CANVAS_SIZE = 50  # Canvas width/height (padding added)
+        
+        # Define colors: Dark gray circle when inactive, Red circle when active.
+        INACTIVE_COLOR = "#475569" # Slate 600 (Dark Gray)
+        ACTIVE_COLOR = self.theme["record_idle_fill"]       # Red (#ef4444)
+        CANVAS_BG = self.theme["card_bg"] # Background of the card frame (This ensures the flag container has no visible background)
+
         # Rebuild
         for code in self.favorites:
             # Find flag definition
             flag = next((f for c, f, n in LANG_DEFS if c == code), "?")
             is_active = (code == self.active_language)
             
-            fg_color = self.theme["fav_active_fg"] if is_active else self.theme["fav_inactive_fg"]
-            bg_color = self.theme["fav_active_bg"] if is_active else self.theme["fav_inactive_bg"]
+            # Determine circle fill color based on state
+            circle_fill = ACTIVE_COLOR if is_active else INACTIVE_COLOR
             
-            lbl = tk.Label(
-                self.fav_container, 
-                text=flag, 
-                # Use the determined safe font name
-                font=(emoji_font_name, 20),
-                fg=fg_color, 
-                bg=bg_color,
+            # --- 1. Create Canvas (This acts as the container for the circle and flag) ---
+            canvas = tk.Canvas(
+                self.fav_container,
+                width=CANVAS_SIZE,
+                height=CANVAS_SIZE,
+                bg=CANVAS_BG, # Set canvas background to match card_bg
+                highlightthickness=0,
                 cursor="hand2"
             )
-            lbl.pack(side="left", padx=8)
-            lbl.bind("<Button-1>", lambda e, c=code: self.set_active_language(c))
+            canvas.pack(side="left", padx=5)
+
+            # --- 2. Draw the Circle (Oval) with the determined color ---
+            # Coordinates are (x0, y0, x1, y1). Here 5px padding on each side for a 40px circle.
+            canvas.create_oval(
+                5, 5, 45, 45, 
+                fill=circle_fill,
+                outline="",
+                width=0
+            )
+            
+            # --- 3. Place the Flag Emoji in the center ---
+            # Coordinates (x, y) = (CANVAS_SIZE / 2, CANVAS_SIZE / 2)
+            canvas.create_text(
+                CANVAS_SIZE // 2, 
+                CANVAS_SIZE // 2, 
+                text=flag,
+                font=(emoji_font_name, 16), 
+                fill="white"
+            )
+            
+            # --- 4. Bind click event to the canvas ---
+            canvas.bind("<Button-1>", lambda e, c=code: self.set_active_language(c))
             
         self.update_record_button_style()
 
