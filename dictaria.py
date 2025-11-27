@@ -80,6 +80,7 @@ MSG_LISTENING = "[Listening...]"
 MSG_PROCESSING = "[Transcribing...]"
 MSG_NO_AUDIO = "[Audio too short or silent]"
 MSG_ERROR = "[Error: {}]"
+MSG_COPIED = "[Copied to clipboard]"
 
 
 # --------------------
@@ -388,7 +389,8 @@ class DictariaApp:
             full_text = " ".join([seg.text.strip() for seg in segments]).strip()
             
             if full_text:
-                self.safe_append_text(f"{full_text}\n")
+                # Use the new function that appends and copies
+                self.root.after(0, lambda t=full_text: self.safe_append_and_copy(t))
             else:
                 self.safe_append_system(MSG_NO_AUDIO)
                 
@@ -403,6 +405,26 @@ class DictariaApp:
     def safe_append_system(self, text, tag="sys"):
         self.root.after(0, lambda: self.append_system(text, tag))
 
+    # --- NEW METHOD: Appends text and copies it to the clipboard ---
+    def safe_append_and_copy(self, text):
+        """Appends transcribed text to the box and copies it to the clipboard."""
+        
+        # 1. Append text to the text box
+        self.text_box.insert(tk.END, text + "\n")
+        self.text_box.see(tk.END)
+
+        # 2. Copy to clipboard (requires being on the main thread)
+        try:
+            self.root.clipboard_clear()
+            self.root.clipboard_append(text)
+            self.append_system(MSG_COPIED)
+        except tk.TclError:
+            # This can happen if the clipboard is locked or system fails
+            self.append_system("[Warning: Failed to copy to clipboard]", tag="error")
+
+    # --- END NEW METHOD ---
+
+    # Kept for reference, but safe_append_and_copy is now used for transcription output
     def safe_append_text(self, text):
         self.root.after(0, lambda: self.text_box.insert(tk.END, text))
         self.root.after(0, lambda: self.text_box.see(tk.END))
