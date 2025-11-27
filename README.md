@@ -46,7 +46,7 @@ Python packages (also listed in `requirements.txt`):
 * `sounddevice`
 * `soundfile`
 * `numpy`
-* **macOS:** You **do not** need `pynput`. The hotkey is managed by Hammerspoon.
+* **macOS:** You **do not** need `pynput` for the hotkey (handled by Hammerspoon).
 * **Windows/Linux:** You **do** need `pynput` for the global hotkey.
 
 > Tkinter is usually bundled with the standard Python installers on macOS and Windows. On many Linux distros you must install the `tk` package from your system package manager (see below).
@@ -79,15 +79,13 @@ Python packages (also listed in `requirements.txt`):
     pip install -r requirements.txt
     ```
 
-> **Note for macOS users:** The `requirements.txt` includes `pynput` for cross-platform compatibility. If you are only using the Hammerspoon method, you can safely ignore `pynput` installation warnings or use `pip install faster-whisper sounddevice soundfile numpy` instead.
+> On first launch, faster-whisper will download and load the medium model. This can take a bit of time.
 
 4.  **Run Dictaria:**
 
     ```bash
     python dictaria.py
     ```
-
-> On first launch, faster-whisper will download and load the medium model. This can take a bit of time.
 
 ---
 
@@ -101,24 +99,24 @@ Download and install [Hammerspoon](https://www.hammerspoon.org/). It requires **
 
 ### 2. Configure Hammerspoon
 
-1.  Open the Hammerspoon Console (Hammer icon > *Open Console*).
-2.  Open your Hammerspoon config file: `~/.hammerspoon/init.lua` (Hammer icon > *Open Config*).
-3.  **Add the following Lua code** to your `init.lua` file:
+1.  Open the Hammerspoon Console (Hammer icon > *Open Console*).
+2.  Open your Hammerspoon config file: `~/.hammerspoon/init.lua` (Hammer icon > *Open Config*).
+3.  **Add the following Lua code** to your `init.lua` file:
 
-    ```lua
-    -- Dictaria Hotkey: Cmd + Option + F9 (communicates via a temporary file)
-    local dictaria_hotkey = {"cmd", "alt"} 
-    local dictaria_key = "f9"
-    local signal_file = "/tmp/dictaria_signal_f9.txt" 
+    ```lua
+    -- Dictaria Hotkey: Cmd + Option + F9 (communicates via a temporary file)
+    local dictaria_hotkey = {"cmd", "alt"} 
+    local dictaria_key = "f9"
+    local signal_file = "/tmp/dictaria_signal_f9.txt" 
 
-    hs.hotkey.bind(dictaria_hotkey, dictaria_key, function()
-        -- Use 'touch' to create the signal file. Dictaria.py polls and deletes it.
-        hs.task.new("/usr/bin/touch", nil, {signal_file}):start()
-    end)
+    hs.hotkey.bind(dictaria_hotkey, dictaria_key, function()
+        -- Use 'touch' to create the signal file. Dictaria.py polls and deletes it.
+        hs.task.new("/usr/bin/touch", nil, {signal_file}):start()
+    end)
 
-    hs.alert.show("Dictaria Hotkey (Cmd+Alt+F9) enabled.")
-    ```
-4.  **Reload** the configuration (Hammer icon > *Reload Config*). You should see the confirmation alert.
+    hs.alert.show("Dictaria Hotkey (Cmd+Alt+F9) enabled.")
+    ```
+4.  **Reload** the configuration (Hammer icon > *Reload Config*). You should see the confirmation alert.
 
 ### 3. Permissions Check
 
@@ -159,7 +157,7 @@ Dictaria stores a tiny JSON file in your home directory: `~/.dictaria_config.jso
 
 ## 🍏 macOS Notes
 
-> **Important:** The global hotkey is handled by **Hammerspoon** (see the setup section above). The Python application no longer handles global input directly.
+> **Important:** The global hotkey is handled by **Hammerspoon** (see the setup section above). The Python application only listens to the signal file created by Hammerspoon.
 
 1.  **PortAudio (for `sounddevice`)**
     If you see audio-related errors, install PortAudio:
@@ -210,7 +208,7 @@ A: Yes. After the model is downloaded the first time, transcription is local.
 **Q: Can I use a different model (small, large-v3)?**
 A: Yes. In `dictaria.py`, change `MODEL_SIZE = "medium"`.
 
-**Q: How do I reset languages and favorites?**
+**Q: How do I reset languages?**
 A: Close Dictaria and delete `~/.dictaria_config.json`.
 
 ---
