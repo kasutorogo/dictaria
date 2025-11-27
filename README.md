@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="icon.png" alt="Dictaria icon" width="180">
+  <img src="icon.png" alt="Dictaria icon" width="180">
 </p>
 
 # Dictaria 🎤 - Local Speech-to-Text Tool
@@ -16,20 +16,21 @@ It listens to your microphone, transcribes audio locally using [faster-whisper](
 
 * Records from the system default microphone.
 * Local transcription with `faster-whisper` (`medium` model by default).
+* **Automatically copies transcribed text to the system clipboard (portapapeles).**
 * Multi-language support:
-    * Whisper supports many languages.
-    * Dictaria’s UI exposes 10 common ones by default: Spanish, English, Japanese, French, German, Italian, Portuguese, Chinese, Russian, Korean.
+    * Whisper supports many languages.
+    * Dictaria’s UI exposes 10 common ones by default: Spanish, English, Japanese, French, German, Italian, Portuguese, Chinese, Russian, Korean.
 * Favorite languages bar (up to 5 favorites) with emoji flags.
 * Global hotkey:
-    * macOS: `Cmd + Shift + J`
-    * Windows / Linux: `Ctrl + Shift + J`
+    * macOS: `Cmd + Shift + J`
+    * Windows / Linux: `Ctrl + Shift + J`
 * Simple UI:
-    * Circular red button to start/stop recording.
-    * Scrollable text area with all transcriptions.
-    * Status messages in English: `[Listening...]`, `[Transcribing...]`, etc.
+    * Circular red button to start/stop recording.
+    * Scrollable text area with all transcriptions.
+    * Status messages in English: `[Listening...]`, `[Transcribing...]`, etc.
 * Persistent config in `~/.dictaria_config.json`:
-    * Favorite languages.
-    * Last active language.
+    * Favorite languages.
+    * Last active language.
 
 ---
 
@@ -54,40 +55,40 @@ Python packages (also listed in `requirements.txt`):
 
 ### Quick Install (All Platforms)
 
-1.  Clone the repository:
+1.  Clone the repository:
 
-    ```bash
-    git clone [https://github.com/dnlcstr/dictaria.git](https://github.com/dnlcstr/dictaria.git)
-    cd dictaria
-    ```
+    ```bash
+    git clone [https://github.com/dnlcstr/dictaria.git](https://github.com/dnlcstr/dictaria.git)
+    cd dictaria
+    ```
 
-2.  Create and activate a virtual environment (recommended):
+2.  Create and activate a virtual environment (recommended):
 
-    ```bash
-    python -m venv .venv
+    ```bash
+    python -m venv .venv
 
-    # macOS / Linux
-    source .venv/bin/activate
+    # macOS / Linux
+    source .venv/bin/activate
 
-    # Windows (PowerShell)
-    .venv\Scripts\Activate.ps1
+    # Windows (PowerShell)
+    .venv\Scripts\Activate.ps1
 
-    # Windows (CMD)
-    .venv\Scripts\activate.bat
-    ```
+    # Windows (CMD)
+    .venv\Scripts\activate.bat
+    ```
 
-3.  Install dependencies:
+3.  Install dependencies:
 
-    ```bash
-    pip install --upgrade pip
-    pip install -r requirements.txt
-    ```
+    ```bash
+    pip install --upgrade pip
+    pip install -r requirements.txt
+    ```
 
-4.  Run Dictaria:
+4.  Run Dictaria:
 
-    ```bash
-    python dictaria.py
-    ```
+    ```bash
+    python dictaria.py
+    ```
 
 > On first launch, faster-whisper will download and load the medium model. This can take a bit of time.
 
@@ -95,20 +96,20 @@ Python packages (also listed in `requirements.txt`):
 
 ## ▶️ How to Use
 
-1.  **Start Dictaria:**
-    ```bash
-    cd dictaria
-    source .venv/bin/activate   # or the Windows equivalent
-    python dictaria.py
-    ```
+1.  **Start Dictaria:**
+    ```bash
+    cd dictaria
+    source .venv/bin/activate   # or the Windows equivalent
+    python dictaria.py
+    ```
 
-2.  Select your favorite languages in the **Languages ▾** menu and click a flag to set it as the active language.
+2.  Select your favorite languages in the **Languages ▾** menu and click a flag to set it as the active language.
 
-3.  **Start dictation** by clicking the red button or pressing the global hotkey:
-    * macOS: `Cmd + Shift + J`
-    * Windows / Linux: `Ctrl + Shift + J`
+3.  **Start dictation** by clicking the red button or pressing the global hotkey:
+    * macOS: `Cmd + Shift + J`
+    * Windows / Linux: `Ctrl + Shift + J`
 
-4.  Press the hotkey again (or click the button) to stop recording and start transcription.
+4.  Press the hotkey again (or click the button) to stop recording and start transcription. **Once transcription is complete, the resulting text will automatically be copied to your clipboard (portapapeles).**
 
 ---
 
@@ -124,49 +125,49 @@ Dictaria stores a tiny JSON file in your home directory: `~/.dictaria_config.jso
 
 ## 🍏 macOS Notes
 
-1.  **PortAudio (for `sounddevice`)**
-    If you see audio-related errors, install PortAudio:
-    ```bash
-    brew install portaudio
-    pip install --force-reinstall sounddevice
-    ```
+1.  **PortAudio (for `sounddevice`)**
+    If you see audio-related errors, install PortAudio:
+    ```bash
+    brew install portaudio
+    pip install --force-reinstall sounddevice
+    ```
 
-2.  **Microphone Permissions**
-    Make sure your terminal (or app wrapper) has access:
-    * System Settings → Privacy & Security → Microphone.
+2.  **Microphone Permissions**
+    Make sure your terminal (or app wrapper) has access:
+    * System Settings → Privacy & Security → Microphone.
 
-3.  **Accessibility Permissions (Global Hotkey)**
-    The global hotkey requires accessibility / input monitoring permissions:
-    * System Settings → Privacy & Security → Accessibility.
-    * Add your terminal (and/or your Dictaria `.app` wrapper) and enable "Allow this app to control your computer".
+3.  **Accessibility Permissions (Global Hotkey)**
+    The global hotkey requires accessibility / input monitoring permissions:
+    * System Settings → Privacy & Security → Accessibility.
+    * Add your terminal (and/or your Dictaria `.app` wrapper) and enable "Allow this app to control your computer".
 
 ---
 
 ## 🪟 Windows Notes
 
-1.  **Python & Tkinter**
-    Install Python from `python.org` and check **“Add Python to PATH”**. Tkinter is included by default.
+1.  **Python & Tkinter**
+    Install Python from `python.org` and check **“Add Python to PATH”**. Tkinter is included by default.
 
-2.  **Microphone Permissions**
-    On recent Windows: Settings → Privacy & security → Microphone. Enable access for desktop apps.
+2.  **Microphone Permissions**
+    On recent Windows: Settings → Privacy & security → Microphone. Enable access for desktop apps.
 
-3.  **Global Hotkey**
-    The hotkey is `Ctrl + Shift + J`. If it fails globally, use the in-window hotkey (same combo while Dictaria is focused).
+3.  **Global Hotkey**
+    The hotkey is `Ctrl + Shift + J`. If it fails globally, use the in-window hotkey (same combo while Dictaria is focused).
 
 ---
 
 ## 🐧 Linux Notes
 
-1.  **System Packages (Debian/Ubuntu)**
-    Install required packages for audio and GUI:
-    ```bash
-    sudo apt update
-    sudo apt install -y python3 python3-venv python3-tk \
-                        libportaudio2 libsndfile1
-    ```
+1.  **System Packages (Debian/Ubuntu)**
+    Install required packages for audio and GUI:
+    ```bash
+    sudo apt update
+    sudo apt install -y python3 python3-venv python3-tk \
+                        libportaudio2 libsndfile1
+    ```
 
-2.  **Global Hotkey**
-    The hotkey is `Ctrl + Shift + J`. If your desktop environment intercepts this shortcut, rely on the in-window hotkey.
+2.  **Global Hotkey**
+    The hotkey is `Ctrl + Shift + J`. If your desktop environment intercepts this shortcut, rely on the in-window hotkey.
 
 ---
 
