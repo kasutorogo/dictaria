@@ -1,8 +1,7 @@
 <p align="center">
-  <img src="assets/icon.png" alt="Dictaria icon" width="180">
+  <img src="icon.png" alt="Dictaria icon" width="180">
 </p>
 
-# Dictaria
 # Dictaria
 
 Dictaria is a small local desktop tool for multi-language speech-to-text. 
