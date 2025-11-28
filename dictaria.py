@@ -342,13 +342,13 @@ class DictariaApp:
         
     def _build_control_buttons(self):
         # Pin button (Column 0 - Left, Grouped)
-        self.btn_pin = tk.Canvas(self.controls_frame, width=20, height=20, bg=self.theme["root_bg"], highlightthickness=0, cursor="hand2")
+        self.btn_pin = tk.Canvas(self.controls_frame, width=20, height=20, bg=self.theme["root_bg"], highlightthickness=0, cursor="arrow")
         self.btn_pin.grid(row=0, column=0, sticky="w", padx=(0, 2))
         self.pin_text = self.btn_pin.create_text(10, 10, text="⦾", font=("Helvetica", 14), fill=self.theme["pin_inactive_fg"])
         self.btn_pin.bind("<Button-1>", lambda e: self.toggle_pin())
         
         # Speaker Icon (⟟/⦲) button (Column 1 - Grouped)
-        self.btn_speaker = tk.Canvas(self.controls_frame, width=30, height=20, bg=self.theme["root_bg"], highlightthickness=0, cursor="hand2")
+        self.btn_speaker = tk.Canvas(self.controls_frame, width=30, height=20, bg=self.theme["root_bg"], highlightthickness=0, cursor="arrow")
         self.btn_speaker.grid(row=0, column=1, sticky="w", padx=(0, 5)) 
         # Initial icon is active (⟟)
         color = self.theme["speaker_active_fg"] if self.is_speaker_active else self.theme["speaker_inactive_fg"]
@@ -357,7 +357,7 @@ class DictariaApp:
         self.btn_speaker.bind("<Button-1>", lambda e: self.toggle_speaker_icon())
 
         # Collapse button (▵/▿) (Column 2 - Grouped)
-        self.btn_collapse = tk.Canvas(self.controls_frame, width=20, height=20, bg=self.theme["root_bg"], highlightthickness=0, cursor="hand2")
+        self.btn_collapse = tk.Canvas(self.controls_frame, width=20, height=20, bg=self.theme["root_bg"], highlightthickness=0, cursor="arrow")
         self.btn_collapse.grid(row=0, column=2, sticky="w", padx=(2, 10)) 
         # Initial icon is expanded (▿)
         self.collapse_text = self.btn_collapse.create_text(10, 10, text="▿", font=("Helvetica", 14), fill=self.theme["pin_inactive_fg"])
