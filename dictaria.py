@@ -87,9 +87,8 @@ THEME = {
     "pin_inactive_fg": "#a4a4a4",
     "scrollbar_trough": "#000000",
     "scrollbar_thumb": "#334155",
-    # Added new colors for the speaker icon
-    "speaker_active_fg": "#ffff00", # Yellow for active
-    "speaker_inactive_fg": "#a4a4a4", # Default grey for inactive
+    "speaker_active_fg": "#e5e554", 
+    "speaker_inactive_fg": "#a4a4a4", 
 }
 
 # Language definitions using NamedTuple for better structure
@@ -348,17 +347,20 @@ class DictariaApp:
         self.pin_text = self.btn_pin.create_text(10, 10, text="⦾", font=("Helvetica", 14), fill=self.theme["pin_inactive_fg"])
         self.btn_pin.bind("<Button-1>", lambda e: self.toggle_pin())
         
-        # Speaker Icon (~o~) button (Column 1 - Grouped)
+        # Speaker Icon (⟟/⦲) button (Column 1 - Grouped)
         self.btn_speaker = tk.Canvas(self.controls_frame, width=30, height=20, bg=self.theme["root_bg"], highlightthickness=0, cursor="hand2")
         self.btn_speaker.grid(row=0, column=1, sticky="w", padx=(0, 5)) 
+        # Initial icon is active (⟟)
         color = self.theme["speaker_active_fg"] if self.is_speaker_active else self.theme["speaker_inactive_fg"]
-        self.speaker_text = self.btn_speaker.create_text(15, 10, text="~o~", font=("Helvetica", 12, "bold"), fill=color)
+        icon = "⟟" if self.is_speaker_active else "⦲"
+        self.speaker_text = self.btn_speaker.create_text(15, 10, text=icon, font=("Helvetica", 12, "bold"), fill=color)
         self.btn_speaker.bind("<Button-1>", lambda e: self.toggle_speaker_icon())
 
-        # Collapse button (Column 2 - Grouped)
+        # Collapse button (▵/▿) (Column 2 - Grouped)
         self.btn_collapse = tk.Canvas(self.controls_frame, width=20, height=20, bg=self.theme["root_bg"], highlightthickness=0, cursor="hand2")
         self.btn_collapse.grid(row=0, column=2, sticky="w", padx=(2, 10)) 
-        self.collapse_text = self.btn_collapse.create_text(10, 10, text="▼", font=("Helvetica", 14), fill=self.theme["pin_inactive_fg"])
+        # Initial icon is expanded (▿)
+        self.collapse_text = self.btn_collapse.create_text(10, 10, text="▿", font=("Helvetica", 14), fill=self.theme["pin_inactive_fg"])
         self.btn_collapse.bind("<Button-1>", lambda e: self.toggle_collapse())
         
         # Language dropdown (Column 4 - Far Right)
@@ -474,8 +476,8 @@ class DictariaApp:
             self.root.geometry(f"{width}x{height}")
             self.root.minsize(width, height)
 
-            # Change collapse icon
-            self.btn_collapse.itemconfig(self.collapse_text, text="▲")
+            # Change collapse icon to minimized (▵)
+            self.btn_collapse.itemconfig(self.collapse_text, text="▵")
             
         else:
             # Transition to expanded: Restore grouped icons and language menu
@@ -489,7 +491,8 @@ class DictariaApp:
             # B. Restore Expander Columns:
             # - Remove weight from centering columns 1 (between Pin and Speaker).
             self.controls_frame.columnconfigure(1, weight=0) 
-            # - Remove weight from centering columns 3 (between Speaker and Collapse).
+            # - Remove weight from centering columns 3 (between Speaker and Collapse) 
+            #   (This column index 3 is reused below as the main expander).
             self.controls_frame.columnconfigure(3, weight=0) 
             # - Restore Column 3 as the single expander that pushes Language (Col 4)
             self.controls_frame.columnconfigure(3, weight=1) 
@@ -509,8 +512,8 @@ class DictariaApp:
             self.root.minsize(self.FULL_MIN_WIDTH, self.FULL_MIN_HEIGHT)
             self.root.update_idletasks()
 
-            # Change collapse icon
-            self.btn_collapse.itemconfig(self.collapse_text, text="▼")
+            # Change collapse icon to expanded (▿)
+            self.btn_collapse.itemconfig(self.collapse_text, text="▿")
             
         self.is_collapsed = not self.is_collapsed
 
@@ -523,9 +526,9 @@ class DictariaApp:
             return
 
         # Simple 880 Hz sine wave for 50ms (higher pitched pip)
-        duration = 0.05
+        duration = 0.1
         freq = 880 # Higher frequency for an acute sound
-        amplitude = 0.08 # Keep it soft
+        amplitude = 0.9 # Keep it soft
         
         # Generate the audio signal
         t = np.linspace(0., duration, int(duration * SAMPLE_RATE), endpoint=False)
@@ -544,14 +547,15 @@ class DictariaApp:
         threading.Thread(target=safe_play_task, daemon=True).start()
         
     def toggle_speaker_icon(self):
-        """Toggle the speaker icon state and update its color."""
+        """Toggle the speaker icon state and update its color and symbol."""
         self.is_speaker_active = not self.is_speaker_active
         self._update_speaker_icon_style()
 
     def _update_speaker_icon_style(self):
-        """Updates the color of the speaker icon (~o~)."""
+        """Updates the color and symbol of the speaker icon (⟟/⦲)."""
         color = self.theme["speaker_active_fg"] if self.is_speaker_active else self.theme["speaker_inactive_fg"]
-        self.btn_speaker.itemconfig(self.speaker_text, fill=color)
+        icon = "⟟" if self.is_speaker_active else "⦲"
+        self.btn_speaker.itemconfig(self.speaker_text, fill=color, text=icon)
 
 
     # --------------------
