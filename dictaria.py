@@ -11,6 +11,8 @@ from typing import NamedTuple, List, Dict
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
+# Conditional import for pynput is handled in main()
+
 from faster_whisper import WhisperModel
 
 import tkinter as tk
@@ -18,12 +20,12 @@ from tkinter import scrolledtext
 
 
 # Hotkey settings
-SIGNAL_FILE = "/tmp/dictaria_signal_f9.txt"  # Used only on macOS with Hammerspoon
+SIGNAL_FILE = "/tmp/dictaria_signal_f9.txt" # Used only on macOS with Hammerspoon
 IS_MAC = sys.platform == "darwin"
 
 if IS_MAC:
     HOTKEY_LABEL = "Cmd + Option + F9"
-    TK_HOTKEY = "<Command-Option-F9>"  # In-window hotkey
+    TK_HOTKEY = "<Command-Option-F9>" # In-window hotkey
     GLOBAL_HOTKEY_COMBO = None        # Hammerspoon handles the global key
 else:
     HOTKEY_LABEL = "Ctrl + Alt + F9"
@@ -33,35 +35,35 @@ else:
 # Model settings
 
 # MODEL_SIZE: which Whisper model to load.
-#   Common values: "tiny", "base", "small", "medium", "large-v2", "large-v3"
-#   - Smaller models (tiny/base/small) → faster, use less RAM, but less accurate.
-#   - Larger models (medium/large-*) → slower, use more RAM, but more accurate.
-#   You can change this string to pick a different trade-off.
+# Common values: "tiny", "base", "small", "medium", "large-v2", "large-v3"
+# - Smaller models (tiny/base/small) → faster, use less RAM, but less accurate.
+# - Larger models (medium/large-*) → slower, use less RAM, but more accurate.
+# You can change this string to pick a different trade-off.
 MODEL_SIZE = "medium"
 
 # DEVICE: where to run the model.
-#   - "cpu"  → works everywhere, but slower.
-#   - "cuda" → use NVIDIA GPU if you have one (requires CUDA drivers).
-#   - "auto" → let faster-whisper pick automatically (GPU if available, else CPU).
+# - "cpu" → works everywhere, but slower.
+# - "cuda" → use NVIDIA GPU if you have one (requires CUDA drivers).
+# - "auto" → let faster-whisper pick automatically (GPU if available, else CPU).
 DEVICE = "cpu"
 
 # COMPUTE_TYPE: numeric precision / quantization used by faster-whisper.
-#   Typical options:
-#     * "int8"          → good default for CPU, low RAM usage, slower.
-#     * "int8_float16"  → mixed precision, still memory-friendly.
-#     * "float16"       → good for GPU, fast, needs FP16 support.
-#     * "float32"       → highest precision, most RAM, usually overkill.
-#   You can tweak this if you want faster speed or lower memory usage.
+# Typical options:
+# * "int8" → good default for CPU, low RAM usage, slower.
+# * "int8_float16" → mixed precision, still memory-friendly.
+# * "float16" → good for GPU, fast, needs FP16 support.
+# * "float32" → highest precision, most RAM, usually overkill.
+# You can tweak this if you want faster speed or lower memory usage.
 COMPUTE_TYPE = "int8"
 
 # SAMPLE_RATE: audio sampling rate in Hz.
-#   Whisper is trained for 16000 Hz, so 16000 is the safest choice.
-#   Only change this if you know what you are doing and keep recorder/config in sync.
+# Whisper is trained for 16000 Hz, so 16000 is the safest choice.
+# Only change this if you know what you are doing and keep recorder/config in sync.
 SAMPLE_RATE = 16000
 
 # CONFIG_PATH: path to the JSON file where Dictaria stores user settings
-#   (currently only the last active language).
-#   You can change the filename or directory if you want separate profiles.
+# (currently only the last active language).
+# You can change the filename or directory if you want separate profiles.
 CONFIG_PATH = os.path.expanduser("~/.dictaria_config.json")
 
 
@@ -85,6 +87,9 @@ THEME = {
     "pin_inactive_fg": "#a4a4a4",
     "scrollbar_trough": "#000000",
     "scrollbar_thumb": "#334155",
+    # Added new colors for the speaker icon
+    "speaker_active_fg": "#ffff00", # Yellow for active
+    "speaker_inactive_fg": "#a4a4a4", # Default grey for inactive
 }
 
 # Language definitions using NamedTuple for better structure
@@ -241,6 +246,7 @@ class DictariaApp:
         self.model_loading = True
         self.is_pinned = False
         self.is_collapsed = False
+        self.is_speaker_active = True # New state for speaker icon, default is active
 
         # Size management for collapse/expand
         self.INITIAL_SIZE = "300x400"
@@ -286,8 +292,8 @@ class DictariaApp:
             self.root.after(0, self.toggle_record)
 
         try:
-            # Check if pynput is available and hotkey combo is defined
-            from pynput import keyboard
+            # keyboard is imported by main() and set in globals()
+            keyboard = globals().get('keyboard') 
             self.keyboard_listener = keyboard.GlobalHotKeys(
                 {GLOBAL_HOTKEY_COMBO: on_activate}
             )
@@ -313,11 +319,14 @@ class DictariaApp:
         self.main_frame = tk.Frame(self.root, bg=self.theme["root_bg"])
         self.main_frame.pack(fill="both", expand=True, padx=5, pady=5)
         
-        # Top Bar: pin | language | collapse
+        # Top Bar: Pin | Speaker | Collapse | Expander | Language Dropdown
         self.controls_frame = tk.Frame(self.main_frame, bg=self.theme["root_bg"])
         self.controls_frame.pack(fill="x", pady=(0, 2))
-        self.controls_frame.columnconfigure(1, weight=1)
-
+        
+        # Default (Expanded) Layout:
+        # 0: Pin | 1: Speaker | 2: Collapse | 3: Expander (Weight 1) | 4: Language Dropdown
+        self.controls_frame.columnconfigure(3, weight=1) # The standard expander column
+        
         self._build_control_buttons()
 
         # Record Button Frame
@@ -333,13 +342,26 @@ class DictariaApp:
         self.append_system(MSG_LOADING_MODEL)
         
     def _build_control_buttons(self):
-        # Pin button
+        # Pin button (Column 0 - Left, Grouped)
         self.btn_pin = tk.Canvas(self.controls_frame, width=20, height=20, bg=self.theme["root_bg"], highlightthickness=0, cursor="hand2")
         self.btn_pin.grid(row=0, column=0, sticky="w", padx=(0, 2))
         self.pin_text = self.btn_pin.create_text(10, 10, text="⦾", font=("Helvetica", 14), fill=self.theme["pin_inactive_fg"])
         self.btn_pin.bind("<Button-1>", lambda e: self.toggle_pin())
+        
+        # Speaker Icon (~o~) button (Column 1 - Grouped)
+        self.btn_speaker = tk.Canvas(self.controls_frame, width=30, height=20, bg=self.theme["root_bg"], highlightthickness=0, cursor="hand2")
+        self.btn_speaker.grid(row=0, column=1, sticky="w", padx=(0, 5)) 
+        color = self.theme["speaker_active_fg"] if self.is_speaker_active else self.theme["speaker_inactive_fg"]
+        self.speaker_text = self.btn_speaker.create_text(15, 10, text="~o~", font=("Helvetica", 12, "bold"), fill=color)
+        self.btn_speaker.bind("<Button-1>", lambda e: self.toggle_speaker_icon())
 
-        # Language dropdown
+        # Collapse button (Column 2 - Grouped)
+        self.btn_collapse = tk.Canvas(self.controls_frame, width=20, height=20, bg=self.theme["root_bg"], highlightthickness=0, cursor="hand2")
+        self.btn_collapse.grid(row=0, column=2, sticky="w", padx=(2, 10)) 
+        self.collapse_text = self.btn_collapse.create_text(10, 10, text="▼", font=("Helvetica", 14), fill=self.theme["pin_inactive_fg"])
+        self.btn_collapse.bind("<Button-1>", lambda e: self.toggle_collapse())
+        
+        # Language dropdown (Column 4 - Far Right)
         self.lang_var = tk.StringVar(self.controls_frame)
         self.lang_var.trace_add("write", self.set_active_language_from_menu)
 
@@ -350,13 +372,8 @@ class DictariaApp:
         )
         menu = self.option_menu_lang["menu"]
         menu.config(bg=self.theme["topbar_bg"], fg=self.theme["topbar_fg"], bd=0, activebackground=self.theme["border_color"], activeforeground=self.theme["topbar_fg"])
-        self.option_menu_lang.grid(row=0, column=1, sticky="ew", pady=2, padx=5)
-
-        # Collapse button
-        self.btn_collapse = tk.Canvas(self.controls_frame, width=20, height=20, bg=self.theme["root_bg"], highlightthickness=0, cursor="hand2")
-        self.btn_collapse.grid(row=0, column=2, sticky="e", padx=(2, 0))
-        self.collapse_text = self.btn_collapse.create_text(10, 10, text="▼", font=("Helvetica", 14), fill=self.theme["pin_inactive_fg"])
-        self.btn_collapse.bind("<Button-1>", lambda e: self.toggle_collapse())
+        # Column 3 is the Expander, pushing this to Column 4
+        self.option_menu_lang.grid(row=0, column=4, sticky="e", pady=2, padx=5)
 
     def _build_record_canvas(self):
         self.canvas_btn = tk.Canvas(self.record_button_frame, width=60, height=60, bg=self.theme["root_bg"], highlightthickness=0, bd=0)
@@ -407,10 +424,10 @@ class DictariaApp:
         self.canvas_btn.coords(self.record_indicator, x0, y0, x1, y1)
 
     # --------------------
-    # COLLAPSE / EXPAND LOGIC (Improved size retention)
+    # COLLAPSE / EXPAND LOGIC (Corrected Distributed Spacing only on Collapse)
     # --------------------
     def toggle_collapse(self):
-        """Toggle between full view and ultra-compact view."""
+        """Toggle between full view and ultra-compact view, applying distributed spacing when collapsed."""
         
         if not self.is_collapsed:
             # Transition to collapsed: Save current expanded size
@@ -418,21 +435,36 @@ class DictariaApp:
             self.last_expanded_width = self.root.winfo_width()
             self.last_expanded_height = self.root.winfo_height()
             
-            # Hide language dropdown and text area
+            # 1. HIDE components
             self.option_menu_lang.grid_remove()
             self.text_frame.pack_forget()
-
-            # Compact paddings and recalculate minimum size
+            
+            # 2. APPLY DISTRIBUTED LAYOUT FOR COLLAPSED STATE:
+            # Current (Expanded) layout: 0:Pin | 1:Speaker | 2:Collapse | 3:Expander | 4:Language
+            
+            # A. Change icon grid positions and stickiness to span columns 0, 2, 4
+            self.btn_pin.grid(row=0, column=0, sticky="w", padx=(0, 0)) # Left
+            self.btn_speaker.grid(row=0, column=2, sticky="", padx=(0, 0)) # Center (no sticky for center alignment)
+            self.btn_collapse.grid(row=0, column=4, sticky="e", padx=(0, 0)) # Right
+            
+            # B. Reconfigure Expander Columns:
+            # - Remove weight from Column 3 (original expander).
+            self.controls_frame.columnconfigure(3, weight=0)
+            # - Add weight to Column 1 (between Pin and Speaker) and Column 3 (between Speaker and Collapse)
+            self.controls_frame.columnconfigure(1, weight=1) 
+            self.controls_frame.columnconfigure(3, weight=1) 
+            
+            # 3. Compact paddings and recalculate minimum size
             self.controls_frame.pack_configure(pady=(0, 0))
             self.main_frame.pack_configure(padx=4, pady=4)
             self.record_button_frame.pack_configure(pady=(0, 12))
             
             self.root.update_idletasks()
-            width = max(
-                self.controls_frame.winfo_reqwidth(),
-                self.record_button_frame.winfo_reqwidth(),
-                200,
-            ) + 8 # +8 for main_frame padding
+            # Calculate required size for controls frame
+            icon_width = self.btn_pin.winfo_reqwidth() + self.btn_speaker.winfo_reqwidth() + self.btn_collapse.winfo_reqwidth()
+            # Estimate minimum width (icon width + minimum padding/expander space)
+            width = max(icon_width + 40, 200) + 8 
+            
             height = (
                 self.controls_frame.winfo_reqheight()
                 + self.record_button_frame.winfo_reqheight()
@@ -444,15 +476,33 @@ class DictariaApp:
 
             # Change collapse icon
             self.btn_collapse.itemconfig(self.collapse_text, text="▲")
+            
         else:
-            # Transition to expanded: Restore components and size
-            self.option_menu_lang.grid(row=0, column=1, sticky="ew", pady=2, padx=5)
+            # Transition to expanded: Restore grouped icons and language menu
+            
+            # 1. RESTORE GROUPED LAYOUT FOR EXPANDED STATE:
+            # A. Restore icon grid positions (0, 1, 2) and stickiness
+            self.btn_pin.grid(row=0, column=0, sticky="w", padx=(0, 2))
+            self.btn_speaker.grid(row=0, column=1, sticky="w", padx=(0, 5))
+            self.btn_collapse.grid(row=0, column=2, sticky="w", padx=(2, 10))
+            
+            # B. Restore Expander Columns:
+            # - Remove weight from centering columns 1 (between Pin and Speaker).
+            self.controls_frame.columnconfigure(1, weight=0) 
+            # - Remove weight from centering columns 3 (between Speaker and Collapse).
+            self.controls_frame.columnconfigure(3, weight=0) 
+            # - Restore Column 3 as the single expander that pushes Language (Col 4)
+            self.controls_frame.columnconfigure(3, weight=1) 
+            
+            # 2. RESTORE COMPONENTS
+            self.option_menu_lang.grid(row=0, column=4, sticky="e", pady=2, padx=5)
+            self.text_frame.pack(fill="both", expand=True, pady=(0, 0))
+
             self.controls_frame.pack_configure(pady=(0, 2))
             self.main_frame.pack_configure(padx=5, pady=5)
             self.record_button_frame.pack_configure(pady=(6, 8))
-            self.text_frame.pack(fill="both", expand=True, pady=(0, 0))
 
-            # Restore expanded window size and minimum
+            # 3. Restore expanded window size and minimum
             width = max(self.last_expanded_width, self.FULL_MIN_WIDTH)
             height = max(self.last_expanded_height, self.FULL_MIN_HEIGHT)
             self.root.geometry(f"{width}x{height}")
@@ -463,6 +513,45 @@ class DictariaApp:
             self.btn_collapse.itemconfig(self.collapse_text, text="▼")
             
         self.is_collapsed = not self.is_collapsed
+
+    # --------------------
+    # SPEAKER ICON / AUDIO FEEDBACK
+    # --------------------
+    def _play_pip_sound(self):
+        """Plays a short, soft 'pip' sound if the speaker is active, ensuring thread safety."""
+        if not self.is_speaker_active:
+            return
+
+        # Simple 880 Hz sine wave for 50ms (higher pitched pip)
+        duration = 0.05
+        freq = 880 # Higher frequency for an acute sound
+        amplitude = 0.08 # Keep it soft
+        
+        # Generate the audio signal
+        t = np.linspace(0., duration, int(duration * SAMPLE_RATE), endpoint=False)
+        waveform = amplitude * np.sin(2. * np.pi * freq * t)
+        
+        # The actual play task must run in a thread separate from the main Tkinter loop
+        def safe_play_task():
+            try:
+                # Use default output device
+                sd.play(waveform.astype(np.float32), samplerate=SAMPLE_RATE)
+                sd.wait() # Wait until the sound has finished playing
+            except Exception as e:
+                print(f"[System] Warning: Could not play pip sound: {e}")
+        
+        # Start the playback thread (daemon=True means it won't block program exit)
+        threading.Thread(target=safe_play_task, daemon=True).start()
+        
+    def toggle_speaker_icon(self):
+        """Toggle the speaker icon state and update its color."""
+        self.is_speaker_active = not self.is_speaker_active
+        self._update_speaker_icon_style()
+
+    def _update_speaker_icon_style(self):
+        """Updates the color of the speaker icon (~o~)."""
+        color = self.theme["speaker_active_fg"] if self.is_speaker_active else self.theme["speaker_inactive_fg"]
+        self.btn_speaker.itemconfig(self.speaker_text, fill=color)
 
 
     # --------------------
@@ -500,6 +589,7 @@ class DictariaApp:
             self.lang_var.set(LANG_OPTIONS[0])
             
         self.update_record_button_style()
+        self._update_speaker_icon_style() # Ensure initial speaker icon style is set
 
     # --------------------
     # PIN / MODEL / RECORDING LOGIC
@@ -568,6 +658,7 @@ class DictariaApp:
         self.safe_append_system(MSG_PROCESSING)
 
         tmp_name = None
+        full_text = ""
         try:
             # Use tempfile.NamedTemporaryFile for safer file handling
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
@@ -596,6 +687,10 @@ class DictariaApp:
                     os.remove(tmp_name)
                 except OSError as e:
                     print(f"Error removing temp file {tmp_name}: {e}")
+            
+            # Play the soft pip sound when transcription is finished - SCHEDULED ON MAIN THREAD
+            self.root.after(0, self._play_pip_sound)
+
 
     # --------------------
     # UI HELPERS (Ensuring thread safety with root.after)
@@ -720,4 +815,13 @@ def main():
 
 
 if __name__ == "__main__":
+    # Check for sounddevice and soundfile before running main
+    try:
+        # This check is just to ensure the basic audio libraries are available
+        sd.query_devices(kind='output') 
+    except Exception as e:
+        print(f"FATAL ERROR: sounddevice or soundfile is missing or configuration error: {e}")
+        print("Please ensure sounddevice and soundfile are installed and a working audio output is available.")
+        sys.exit(1)
+        
     main()
