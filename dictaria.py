@@ -396,7 +396,7 @@ class DictariaApp:
             # Compact paddings and recalculate minimum size
             self.controls_frame.pack_configure(pady=(0, 0))
             self.main_frame.pack_configure(padx=4, pady=4)
-            self.record_button_frame.pack_configure(pady=(4, 4))
+            self.record_button_frame.pack_configure(pady=(0, 12))
             
             self.root.update_idletasks()
             width = max(
