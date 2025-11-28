@@ -215,12 +215,15 @@ Dictaria stores a tiny JSON file in your home directory: `~/.dictaria_config.jso
 ## ❓ FAQ
 
 **Q: Does Dictaria work offline?**
+
 A: Yes. After the model is downloaded the first time, transcription is local.
 
 **Q: Can I use a different model (small, large-v3)?**
+
 A: Yes. In `dictaria.py`, change `MODEL_SIZE = "medium"`.
 
 **Q: How do I reset languages?**
+
 A: Close Dictaria and delete `~/.dictaria_config.json`.
 
 ---
