@@ -31,11 +31,39 @@ else:
     GLOBAL_HOTKEY_COMBO = "<ctrl>+<alt>+<f9>"
 
 # Model settings
+
+# MODEL_SIZE: which Whisper model to load.
+#   Common values: "tiny", "base", "small", "medium", "large-v2", "large-v3"
+#   - Smaller models (tiny/base/small) → faster, use less RAM, but less accurate.
+#   - Larger models (medium/large-*) → slower, use more RAM, but more accurate.
+#   You can change this string to pick a different trade-off.
 MODEL_SIZE = "medium"
+
+# DEVICE: where to run the model.
+#   - "cpu"  → works everywhere, but slower.
+#   - "cuda" → use NVIDIA GPU if you have one (requires CUDA drivers).
+#   - "auto" → let faster-whisper pick automatically (GPU if available, else CPU).
 DEVICE = "cpu"
+
+# COMPUTE_TYPE: numeric precision / quantization used by faster-whisper.
+#   Typical options:
+#     * "int8"          → good default for CPU, low RAM usage, slower.
+#     * "int8_float16"  → mixed precision, still memory-friendly.
+#     * "float16"       → good for GPU, fast, needs FP16 support.
+#     * "float32"       → highest precision, most RAM, usually overkill.
+#   You can tweak this if you want faster speed or lower memory usage.
 COMPUTE_TYPE = "int8"
+
+# SAMPLE_RATE: audio sampling rate in Hz.
+#   Whisper is trained for 16000 Hz, so 16000 is the safest choice.
+#   Only change this if you know what you are doing and keep recorder/config in sync.
 SAMPLE_RATE = 16000
+
+# CONFIG_PATH: path to the JSON file where Dictaria stores user settings
+#   (currently only the last active language).
+#   You can change the filename or directory if you want separate profiles.
 CONFIG_PATH = os.path.expanduser("~/.dictaria_config.json")
+
 
 # Theme (dark / slate)
 THEME = {
