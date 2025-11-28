@@ -15,10 +15,10 @@ It listens to your microphone, transcribes audio locally using [faster-whisper](
 * Records from the system default microphone.
 * Local transcription with `faster-whisper`. It uses the **Whisper v3 medium model** by default, which offers excellent accuracy.
 * **Automatically copies transcribed text to the system clipboard.**
-* **Pin button** 📌 to keep the window **always on top** (foreground).
-* **View Collapse Button (⬇️/⬆️):** Allows you to **hide the text area** and minimize the window to a small, non-intrusive strip containing only the language selector and the record button. (Note: The actual icons used in the UI are `▼` for expanded and `▲` for collapsed, but these markers represent the action).
+* **Pin button** (⦾/⦿) to keep the window **always on top** (foreground).
+* **View Collapse Button (▲/▼):** Allows you to **hide the text area** and minimize the window to a small, non-intrusive strip containing only the language selector and the record button.
 * Multi-language support via a single dropdown:
-    * Dictaria’s UI exposes 10 common ones by default: Spanish, English, Japanese, French, German, Italian, Portuguese, Chinese, Russian, Korean.
+    * Dictaria’s UI exposes 10 common ones by default: English, Chinese, Spanish, Japanese, French, German, Italian, Portuguese, Russian, Korean.
 * Global and In-Window hotkeys (see table below).
 * Simple UI:
     * **Compact and minimalist window size.**
@@ -152,9 +152,9 @@ Download and install [Hammerspoon](https://www.hammerspoon.org/). It requires **
 
 4. Press the hotkey again (or click the button) to stop recording and start transcription. **Once transcription is complete, the resulting text will automatically be copied to your clipboard.**
 
-5. Use the **Pin button** (⦾) in the top-left corner to keep the Dictaria window over other applications.
+5. Use the **Pin button** (⦾/⦿) in the top-left corner to keep the Dictaria window over other applications.
 
-6. Use the **Collapse button** (▲) in the top-right corner to **hide the text area** and minimize the window.
+6. Use the **Collapse button** (▲/▼) in the top-right corner to **hide the text area** and minimize the window.
 
 ---
 
