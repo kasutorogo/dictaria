@@ -1,32 +1,34 @@
 <p align="center">
-  <img src="icon.png" alt="Dictaria icon" width="180">
+  <img src="icon.png" alt="Dictaria icon" width="180">
 </p>
 
 # Dictaria 🎤 - Local Speech-to-Text Tool
 
-Dictaria is a small desktop dictation app. Its **compact design** keeps it out of your way while you work.
+Dictaria is a small, compact desktop dictation app. Its **minimalist design** keeps it out of your way while you work.
 
-It listens to your microphone, transcribes audio locally using [faster-whisper](https://github.com/SYSTRAN/faster-whisper), and dumps everything into a simple multi-language text window with a global hotkey.
+It listens to your microphone, transcribes audio locally using [faster-whisper](https://github.com/SYSTRAN/faster-whisper), and outputs the text into a simple, multi-language window, accessible via a global hotkey.
 
 ---
 
 ## ✨ Features
 
-* Records from the system default microphone.
-* Local transcription with `faster-whisper`. It uses the **Whisper v3 medium model** by default, which offers excellent accuracy.
-* **Automatically copies transcribed text to the system clipboard.**
-* **Pin button** (⦾/⦿) to keep the window **always on top** (foreground).
-* **View Collapse Button (▲/▼):** Allows you to **hide the text area** and minimize the window to a small, non-intrusive strip containing only the language selector and the record button.
+* Records from the system's default microphone.
+* Local transcription using `faster-whisper`. It defaults to the **Whisper v3 medium model** for excellent accuracy.
+* **Automatically copies the transcribed text to the system clipboard.**
+* **Pin Button** (⦾/⦿) to keep the window **always on top** (foreground).
+* **Speaker/Audio Feedback Button** (⟟/⦲): Toggles a soft audio "pip" sound that plays when the transcription is complete. By default, this is **active** (yellow color).
+* **View Collapse Button (△/▽):** Allows you to **hide the text area** and minimize the window to a small, non-intrusive strip.
+    * **Collapsed State Layout:** When collapsed, the three primary icons (Pin, Speaker, Collapse) are **horizontally distributed** across the top bar for quick access.
 * Multi-language support via a single dropdown:
-    * Dictaria’s UI exposes 10 common ones by default: English, Chinese, Spanish, Japanese, French, German, Italian, Portuguese, Russian, Korean.
+    * Dictaria’s UI exposes 10 common languages by default: English, Chinese, Spanish, Japanese, French, German, Italian, Portuguese, Russian, Korean.
 * Global and In-Window hotkeys (see table below).
 * Simple UI:
     * **Compact and minimalist window size.**
     * Circular red button to start/stop recording.
-    * Scrollable text area with all transcriptions.
+    * Scrollable text area containing all transcriptions.
     * Status messages in English: `[Listening...]`, `[Transcribing...]`, etc.
-* Persistent config in `~/.dictaria_config.json`:
-    * Last active language.
+* Persistent configuration in `~/.dictaria_config.json`:
+    * Remembers the last active language.
 
 ---
 
@@ -59,20 +61,20 @@ Python packages (also listed in `requirements.txt`):
 * **Windows/Linux:** You **do** need `pynput` for the global hotkey.
 * **macOS:** You **do not** need `pynput` for the hotkey (handled by Hammerspoon).
 
-> Tkinter is usually bundled with the standard Python installers on macOS and Windows. On many Linux distros you must install the `tk` package from your system package manager (see below).
+> Tkinter is usually bundled with standard Python installers on macOS and Windows. On many Linux distros you must install the `tk` package from your system package manager (see below).
 
 ### Quick Install (All Platforms)
 
-1. Clone the repository:
+1.  Clone the repository:
 
-    ```
-    git clone [[https://github.com/dnlcstr/dictaria.git](https://github.com/dnlcstr/dictaria.git)]
+    ```bash
+    git clone [https://github.com/dnlcstr/dictaria.git](https://github.com/dnlcstr/dictaria.git)
     cd dictaria
     ```
 
-2. Create and activate a virtual environment (recommended):
+2.  Create and activate a virtual environment (recommended):
 
-    ```
+    ```bash
     python -m venv .venv
 
     # macOS / Linux
@@ -82,18 +84,18 @@ Python packages (also listed in `requirements.txt`):
     .venv\Scripts\Activate.ps1
     ```
 
-3. Install dependencies:
+3.  Install dependencies:
 
-    ```
+    ```bash
     pip install --upgrade pip
     pip install -r requirements.txt
     ```
 
 > On first launch, faster-whisper will download and load the medium model. This can take a bit of time.
 
-4. **Run Dictaria:**
+4.  **Run Dictaria:**
 
-    ```
+    ```bash
     python dictaria.py
     ```
 
@@ -105,13 +107,13 @@ Since Dictaria relies on **Hammerspoon** for the global hotkey on macOS, you mus
 
 ### 1. Install Hammerspoon
 
-Download and install [Hammerspoon](https://www.hammerspoon.org/). It requires **Accessibility Permissions** to work.
+Download and install [Hammerspoon](https://www.hammerspoon.org/). It requires **Accessibility Permissions** to function.
 
 ### 2. Configure Hammerspoon
 
-1. Open the Hammerspoon Console (Hammer icon > *Open Console*).
-2. Open your Hammerspoon config file: `~/.hammerspoon/init.lua` (Hammer icon > *Open Config*).
-3. **Add the following Lua code** to your `init.lua` file:
+1.  Open the Hammerspoon Console (Hammer icon > *Open Console*).
+2.  Open your Hammerspoon config file: `~/.hammerspoon/init.lua` (Hammer icon > *Open Config*).
+3.  **Add the following Lua code** to your `init.lua` file:
 
     ```lua
     -- Dictaria Hotkey: Cmd + Option + F9 (communicates via a temporary file)
@@ -125,7 +127,7 @@ Download and install [Hammerspoon](https://www.hammerspoon.org/). It requires **
     hs.alert.show("Dictaria Hotkey (Cmd+Alt+F9) enabled.")
     ```
 
-4. **Reload** the configuration (Hammer icon > *Reload Config*). You should see the confirmation alert.
+4.  **Reload** the configuration (Hammer icon > *Reload Config*). You should see the confirmation alert.
 
 ### 3. Permissions Check
 
@@ -136,25 +138,26 @@ Download and install [Hammerspoon](https://www.hammerspoon.org/). It requires **
 
 ## ▶️ How to Use
 
-1. **Start Dictaria:**
+1.  **Start Dictaria:**
 
-    ```
+    ```bash
     cd dictaria
     source .venv/bin/activate    # or the Windows equivalent
     python dictaria.py
     ```
 
-2. Select your language in the dropdown menu to set it as the active language.
+2.  Select your language in the dropdown menu to set it as the active language.
 
-3. **Start dictation** by clicking the red button or pressing the global hotkey:
+3.  **Start dictation** by clicking the red button or pressing the global hotkey:
     * macOS: **`Cmd + Option + F9`** (via Hammerspoon)
     * Windows / Linux: **`Ctrl + Alt + F9`**
 
-4. Press the hotkey again (or click the button) to stop recording and start transcription. **Once transcription is complete, the resulting text will automatically be copied to your clipboard.**
+4.  Press the hotkey again (or click the button) to stop recording and start transcription. **Once transcription is complete, the resulting text will automatically be copied to your clipboard.**
+    * If the **Speaker icon (~o~)** is yellow, you will hear a soft sound when the transcription finishes. Click the icon to toggle this audio feedback off (it will turn gray).
 
-5. Use the **Pin button** (⦾/⦿) in the top-left corner to keep the Dictaria window over other applications.
+5.  Use the **Pin button** (⟟/⦲) in the top-left corner to keep the Dictaria window over other applications.
 
-6. Use the **Collapse button** (▲/▼) in the top-right corner to **hide the text area** and minimize the window.
+6.  Use the **Collapse button** (△/▽) in the top-right corner to **hide the text area** and minimize the window.
 
 ---
 
@@ -171,14 +174,14 @@ Dictaria stores a tiny JSON file in your home directory: `~/.dictaria_config.jso
 
 > **Important:** The global hotkey is handled by **Hammerspoon** (see the setup section above). The Python application only listens to the signal file created by Hammerspoon.
 
-1. **PortAudio (for `sounddevice`)**
+1.  **PortAudio (for `sounddevice`)**
     If you see audio-related errors, install PortAudio:
-    ```
+    ```bash
     brew install portaudio
     pip install --force-reinstall sounddevice
     ```
 
-2. **Microphone Permissions**
+2.  **Microphone Permissions**
     Make sure your terminal (or app wrapper) has access:
     * System Settings → Privacy & Security → Microphone.
 
@@ -186,28 +189,28 @@ Dictaria stores a tiny JSON file in your home directory: `~/.dictaria_config.jso
 
 ## 🪟 Windows Notes
 
-1. **Python & Tkinter**
+1.  **Python & Tkinter**
     Install Python from `python.org` and check **“Add Python to PATH”**. Tkinter is included by default.
 
-2. **Microphone Permissions**
+2.  **Microphone Permissions**
     On recent Windows: Settings → Privacy & security → Microphone. Enable access for desktop apps.
 
-3. **Global Hotkey**
+3.  **Global Hotkey**
     The hotkey is **`Ctrl + Alt + F9`** and is handled by the included `pynput` dependency.
 
 ---
 
 ## 🐧 Linux Notes
 
-1. **System Packages (Debian/Ubuntu)**
+1.  **System Packages (Debian/Ubuntu)**
     Install required packages for audio and GUI:
-    ```
+    ```bash
     sudo apt update
     sudo apt install -y python3 python3-venv python3-tk \
                            libportaudio2 libsndfile1
     ```
 
-2. **Global Hotkey**
+2.  **Global Hotkey**
     The hotkey is **`Ctrl + Alt + F9`** and is handled by `pynput`. If your desktop environment intercepts this shortcut, rely on the in-window hotkey.
 
 ---
