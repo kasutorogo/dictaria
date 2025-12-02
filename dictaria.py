@@ -14,7 +14,7 @@ import soundfile as sf
 from faster_whisper import WhisperModel
 
 import tkinter as tk
-from tkinter import scrolledtext
+from tkinter import scrolledtext, PhotoImage
 
 # --------------------
 # CONSTANTS & CONFIGURATION
@@ -281,30 +281,38 @@ class DictariaApp:
     # UI BUILD
     # --------------------
     def build_ui(self):
-        self.root.geometry(self.INITIAL_SIZE)
-        self.root.minsize(self.FULL_MIN_WIDTH, self.FULL_MIN_HEIGHT)
-        self.root.configure(bg=self.theme["root_bg"])
-        self.root.title("Dictaria")
-        self.root.bind_all(TK_HOTKEY, lambda e: self.toggle_record())
+            self.root.geometry(self.INITIAL_SIZE)
+            self.root.minsize(self.FULL_MIN_WIDTH, self.FULL_MIN_HEIGHT)
+            self.root.configure(bg=self.theme["root_bg"])
+            self.root.title("Dictaria")
 
-        self.main_frame = tk.Frame(self.root, bg=self.theme["root_bg"])
-        self.main_frame.pack(fill="both", expand=True, padx=5, pady=5)
-        
-        self.controls_frame = tk.Frame(self.main_frame, bg=self.theme["root_bg"])
-        self.controls_frame.pack(fill="x", pady=(0, 2))
-        self.controls_frame.columnconfigure(3, weight=1)
-        
-        self._build_control_buttons()
+            try:
+                icon_path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), "icon.png")
+                self.icon_image = PhotoImage(file=icon_path) 
+                self.root.iconphoto(True, self.icon_image) 
+            except Exception as e:
+                print(f"Icon Load Warning: Could not load icon. Error: {e}")
+            
+            self.root.bind_all(TK_HOTKEY, lambda e: self.toggle_record())
 
-        self.record_button_frame = tk.Frame(self.main_frame, bg=self.theme["root_bg"])
-        self.record_button_frame.pack(pady=(6, 8))
-        self._build_record_canvas()
+            self.main_frame = tk.Frame(self.root, bg=self.theme["root_bg"])
+            self.main_frame.pack(fill="both", expand=True, padx=5, pady=5)
+            
+            self.controls_frame = tk.Frame(self.main_frame, bg=self.theme["root_bg"])
+            self.controls_frame.pack(fill="x", pady=(0, 2))
+            self.controls_frame.columnconfigure(3, weight=1)
+            
+            self._build_control_buttons()
 
-        self.text_frame = tk.Frame(self.main_frame, bg=self.theme["text_frame_bg"])
-        self.text_frame.pack(fill="both", expand=True)
-        self._build_text_box()
+            self.record_button_frame = tk.Frame(self.main_frame, bg=self.theme["root_bg"])
+            self.record_button_frame.pack(pady=(6, 8))
+            self._build_record_canvas()
 
-        self.append_system(MSG_LOADING_MODEL)
+            self.text_frame = tk.Frame(self.main_frame, bg=self.theme["text_frame_bg"])
+            self.text_frame.pack(fill="both", expand=True)
+            self._build_text_box()
+
+            self.append_system(MSG_LOADING_MODEL)
 
     def _build_control_buttons(self):
         # Pin
